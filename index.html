@@ -13,9 +13,6 @@
 <body>
 
 <script type="text/javascript">
-
-
-
     // Game data
     const numRows = 6;
     const numCols = 7;
@@ -28,113 +25,204 @@
     // Row number x column number array of dots
     var dots;
 
-    function preload ()
-    {
-    }
+    // Connecting dots
+    // State of the scene
+    const State = Object.freeze({ 
+        IDLE: 0,
+        CONNECT: 1,
+        REPOSITION: 3
+    });
+    var state = State.IDLE;
 
-    function create ()
-    {
-        drawHexTiles(this);
-        // spawnDot(this, 300, 400)
-        initializeDots(this);
-    }
+    // List of currently connected dots while cursor is down
+    var connected_dots = [];
 
-    function update ()
+    class DotsScene extends Phaser.Scene
     {
-    }
-
-    // Initialize dots
-    function initializeDots(scene)
-    {
-        dots = [];
-        for (var i = 0; i < numRows; i++) {
-            dots[i] = 0;
-
-            for (var j = 0; j < numCols; j++) {
-                dots[i][j] = spawnDot(scene, grid_positions[i][j].x, grid_positions[i][j].y, getRandomDotColor());
-            }
+        constructor ()
+        {
+            super();
         }
-    }
 
-    function getRandomDotColor()
-    {    
-        const colorList = [
-            0xf46d43,
-            0xd8e594,
-            0x3288bd,
-            0x66c2a5,
-            0xfdae61,
-            0xd53e4f,
-            0xfee08b,
-            0xabdda4
-        ]
+        preload ()
+        {
+        }
 
-        // Random integer within interval [0, numColors)
-        randomIndex = Math.floor(Math.random() * numColors);
-        return colorList[randomIndex];
-    }
+        create ()
+        {
+            this.drawHexTiles();
+            // spawnDot(this, 300, 400)
+            this.initializeDots();
+            console.log("Dots : " + dots);
 
-    function spawnDot(scene, x, y, color) 
-    {
-        const dotSize = 20
-        dot = new Phaser.GameObjects.Ellipse(scene, x, y, dotSize, dotSize, color);
-        scene.add.existing(dot);
-        dot.setInteractive();
-        dot.on('pointerdown', () => { console.log("Clicked on dot.")})
-        return dot;
-    }
+            for (var i = 0; i < numRows; i++) {
+                for (var j = 0; j < numCols; j++) {
+                    console.log("Color on initialize : " + i + " " + j + " " + dots[i][j].getData('color'));
+                }
+            }
 
-    // Grid view functions
-    // Create hex tiles with code
-    function drawHexTiles(scene)
-    {
-        const xOffset = 100
-        const yOffset = 100
-        const hexSize = 50;
+            this.handleInputEvents()
+        }
 
-        const hexHeight = Math.sqrt(3) * hexSize / 2;
+        update ()
+        {
+        }
 
-        for (var i = 0; i < numRows; i++) {
-            grid_positions[i] = []
-            var oddRow = (i % 2 != 0)
+        handleInputEvents()
+        {
+            this.input.on('pointerup', pointer =>
+            {
+                if (pointer.leftButtonReleased()) {
+                    onLeftClickReleased();
+                }
+            });
 
-            for (var j = 0; j < numCols; j++) {
-                var x = j * 2 * hexHeight;
-                if (oddRow)
-                    x += hexHeight;
+            this.input.on('gameobjectdown', function (pointer, gameObject)
+            {
+                gameObject.emit('clicked', gameObject);
+            }, this);
 
-                var y = i * (1.5 * hexSize);
+            this.input.on('gameobjectover', function (pointer, gameObject)
+            {
+                gameObject.emit('hover', gameObject);
+            }, this);
+        }
 
-                x += xOffset
-                y += yOffset
-                
-                grid_positions[i][j] = {x : x, y : y}
-                drawHexagon(scene, x, y, hexSize);
+         // Initialize dots
+        initializeDots()
+        {
+            dots = [];
+            for (var i = 0; i < numRows; i++) {
+                dots[i] = [];
+
+                for (var j = 0; j < numCols; j++) {
+                    var dot = this.spawnDot(grid_positions[i][j].x, grid_positions[i][j].y, this.getRandomDotColor());
+                    console.log("Color on creation : " +dot.getData('color'));
+                    dots[i][j] = dot;
+                }
             }
         }
 
-    }
+        spawnDot(x, y, color) 
+        {
+            const dotSize = 20
+            var dot = new Phaser.GameObjects.Ellipse(this, x, y, dotSize, dotSize, color);
+            dot.setData('color', color)
+            console.log("Color: " + dot.getData('color'))
+            
 
-    function drawHexagon(scene, x, y, size) 
-    {
-        var graphics = scene.add.graphics();
-        graphics.lineStyle(2, 0x111111, 1);
+            dot.setInteractive();
+            dot.on('clicked', this.onDotClick, this);
+            dot.on('hover', this.onDotHover, this);
 
-        var points = [];
-        for (var i = 0; i < 6; i++) {
-            var angle = Phaser.Math.DegToRad(60 * i + 30);
-            points.push(new Phaser.Geom.Point(x + size * Math.cos(angle), y + size * Math.sin(angle)));
+            this.add.existing(dot);
+            return dot;
         }
 
-        graphics.beginPath();
-        graphics.moveTo(points[0].x, points[0].y);
-
-        for (var i = 1; i < 6; i++) {
-            graphics.lineTo(points[i].x, points[i].y);
+        onDotClick(dot)
+        {
+            if (state === State.IDLE) {
+                connected_dots.push(dot)
+                state = State.CONNECT;
+                console.log("State: " + state)
+                console.log("Click Color: " + dot.getData('color'))
+                console.log("Dots: " + connected_dots)
+            }
+        }
+        
+        onDotHover(dot)
+        {
+            console.log("Dot hover color: " + dot.getData('color'))
+            if (state === State.CONNECT) {
+                // If color matches the line of connected dots, add to the line
+                if(dot.getData('color') === connected_dots[0].getData('color')) {
+                    connected_dots.push(dot)
+                    
+                    console.log("Color 0: " + connected_dots[0].getData('color'))
+                    console.log("Dots: " + connected_dots)
+                }
+            }
         }
 
-        graphics.closePath();
-        graphics.strokePath();
+        onLeftClickReleased() 
+        {
+            if (state === State.CONNECT) {
+                connected_dots = [];
+                state = State.IDLE;
+                console.log("State: " + state)
+            }
+        }
+
+        getRandomDotColor()
+        {    
+            const colorList = [
+                0xf46d43,
+                0xd8e594,
+                0x3288bd,
+                0x66c2a5,
+                0xfdae61,
+                0xd53e4f,
+                0xfee08b,
+                0xabdda4
+            ]
+
+            // Random integer within interval [0, numColors)
+            var randomIndex = Math.floor(Math.random() * numColors);
+            return colorList[randomIndex];
+        }
+
+        // Grid view functions
+        // Create hex tiles with code
+        drawHexTiles()
+        {
+            const xOffset = 100
+            const yOffset = 100
+            const hexSize = 50;
+
+            const hexHeight = Math.sqrt(3) * hexSize / 2;
+
+            for (var i = 0; i < numRows; i++) {
+                grid_positions[i] = []
+                var oddRow = (i % 2 != 0)
+
+                for (var j = 0; j < numCols; j++) {
+                    var x = j * 2 * hexHeight;
+                    if (oddRow)
+                        x += hexHeight;
+
+                    var y = i * (1.5 * hexSize);
+
+                    x += xOffset
+                    y += yOffset
+                    
+                    grid_positions[i][j] = {x : x, y : y}
+                    this.drawHexagon(x, y, hexSize);
+                }
+            }
+
+        }
+
+        drawHexagon(x, y, size) 
+        {
+            var graphics = this.add.graphics();
+            graphics.lineStyle(2, 0x111111, 1);
+
+            var points = [];
+            for (var i = 0; i < 6; i++) {
+                var angle = Phaser.Math.DegToRad(60 * i + 30);
+                points.push(new Phaser.Geom.Point(x + size * Math.cos(angle), y + size * Math.sin(angle)));
+            }
+
+            graphics.beginPath();
+            graphics.moveTo(points[0].x, points[0].y);
+
+            for (var i = 1; i < 6; i++) {
+                graphics.lineTo(points[i].x, points[i].y);
+            }
+
+            graphics.closePath();
+            graphics.strokePath();
+        }
     }
 
     var config = {
@@ -142,11 +230,7 @@
         width: 800,
         height: 600,
         backgroundColor: '#eeeeee',
-        scene: {
-            preload: preload,
-            create: create,
-            update: update
-        }
+        scene: DotsScene
     };
 
     var game = new Phaser.Game(config);
