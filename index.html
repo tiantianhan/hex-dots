@@ -1,0 +1,157 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Hex Dots</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+
+
+    // Game data
+    const numRows = 6;
+    const numCols = 7;
+    const numColors = 4;
+
+    // Grid view data
+    // Row number x column number array of x, y positions
+    var grid_positions = [];
+
+    // Row number x column number array of dots
+    var dots;
+
+    function preload ()
+    {
+    }
+
+    function create ()
+    {
+        drawHexTiles(this);
+        // spawnDot(this, 300, 400)
+        initializeDots(this);
+    }
+
+    function update ()
+    {
+    }
+
+    // Initialize dots
+    function initializeDots(scene)
+    {
+        dots = [];
+        for (var i = 0; i < numRows; i++) {
+            dots[i] = 0;
+
+            for (var j = 0; j < numCols; j++) {
+                dots[i][j] = spawnDot(scene, grid_positions[i][j].x, grid_positions[i][j].y, getRandomDotColor());
+            }
+        }
+    }
+
+    function getRandomDotColor()
+    {    
+        const colorList = [
+            0xf46d43,
+            0xd8e594,
+            0x3288bd,
+            0x66c2a5,
+            0xfdae61,
+            0xd53e4f,
+            0xfee08b,
+            0xabdda4
+        ]
+
+        // Random integer within interval [0, numColors)
+        randomIndex = Math.floor(Math.random() * numColors);
+        return colorList[randomIndex];
+    }
+
+    function spawnDot(scene, x, y, color) 
+    {
+        const dotSize = 20
+        dot = new Phaser.GameObjects.Ellipse(scene, x, y, dotSize, dotSize, color);
+        scene.add.existing(dot);
+        dot.setInteractive();
+        dot.on('pointerdown', () => { console.log("Clicked on dot.")})
+        return dot;
+    }
+
+    // Grid view functions
+    // Create hex tiles with code
+    function drawHexTiles(scene)
+    {
+        const xOffset = 100
+        const yOffset = 100
+        const hexSize = 50;
+
+        const hexHeight = Math.sqrt(3) * hexSize / 2;
+
+        for (var i = 0; i < numRows; i++) {
+            grid_positions[i] = []
+            var oddRow = (i % 2 != 0)
+
+            for (var j = 0; j < numCols; j++) {
+                var x = j * 2 * hexHeight;
+                if (oddRow)
+                    x += hexHeight;
+
+                var y = i * (1.5 * hexSize);
+
+                x += xOffset
+                y += yOffset
+                
+                grid_positions[i][j] = {x : x, y : y}
+                drawHexagon(scene, x, y, hexSize);
+            }
+        }
+
+    }
+
+    function drawHexagon(scene, x, y, size) 
+    {
+        var graphics = scene.add.graphics();
+        graphics.lineStyle(2, 0x111111, 1);
+
+        var points = [];
+        for (var i = 0; i < 6; i++) {
+            var angle = Phaser.Math.DegToRad(60 * i + 30);
+            points.push(new Phaser.Geom.Point(x + size * Math.cos(angle), y + size * Math.sin(angle)));
+        }
+
+        graphics.beginPath();
+        graphics.moveTo(points[0].x, points[0].y);
+
+        for (var i = 1; i < 6; i++) {
+            graphics.lineTo(points[i].x, points[i].y);
+        }
+
+        graphics.closePath();
+        graphics.strokePath();
+    }
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: '#eeeeee',
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var game = new Phaser.Game(config);
+    
+</script>
+
+</body>
+</html>
