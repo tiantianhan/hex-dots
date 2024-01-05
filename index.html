@@ -37,12 +37,20 @@
     // List of currently connected dots while cursor is down
     var dot_line;
 
-    class DotLine {
+    class DotLine extends Phaser.GameObjects.GameObject{
         constructor (scene)
         {
+            super(scene, 'dotLine');
             this.scene = scene;
             this.graphics = [];
             this.connected_dots = [];
+
+            scene.add.existing(this);
+        }
+
+        getDots()
+        {
+            return this.connected_dots;
         }
 
         addDot(dot)
@@ -90,9 +98,29 @@
             return false
         }
 
+        getFirstDot()
+        {
+            return this.connected_dots[0];
+        }
+
+        getLastDot()
+        {
+            return this.connected_dots[this.connected_dots.length - 1];
+        }
+
+        isLine()
+        {
+            return this.connected_dots.length > 1;
+        }
+
+        isLoop()
+        {
+            return this.getFirstDot() === this.getLastDot();
+        }
+
         isFirstDot(dot)
         {
-            return this.connected_dots[0] === dot;
+            return this.getFirstDot() === dot;
         }
 
         isMatchingColor(dot)
@@ -206,6 +234,7 @@
         {
             if (state === State.IDLE) {
                 dot_line.addDot(dot);
+                this.playDotConnectedEffects(dot);
                 state = State.CONNECT;
                 console.log("State: " + state)
                 console.log("Dot click position r, c: " + dot.getData('row'), dot.getData('column'))
@@ -219,6 +248,11 @@
                 // If color matches the line of connected dots, add to the line
                 if( dot_line.canDrawLineTo(dot)) {
                     dot_line.addDot(dot);
+                    this.playDotConnectedEffects(dot);
+                    
+                    if(dot_line.isLoop()){
+                        //TODO
+                    }
                 }
             }
         }
@@ -226,9 +260,19 @@
         onLeftClickReleased() 
         {
             if (state === State.CONNECT) {
-                // connected_dots = [];
+                if (dot_line.isLine()) {
+                    var connected_dots = dot_line.getDots();
+                    // repositionDots(connected_dots);
+                    for (var dot of connected_dots){
+                        this.playDotDeleteEffects(dot)
+                    }
+                    // state = State.REPOSITION;
+                } else {
+                    state = State.IDLE;
+                }
+
                 dot_line.deleteLine();
-                state = State.IDLE;
+                
                 console.log("State: " + state)
             }
         }
@@ -238,7 +282,55 @@
             return dot.getData('color') === other.getData('color');
         }
 
+        repositionDots(deleted_dots)
+        {
+            var shift = []
+            for (var i = 0; i < numRows; i++) {
+                // for(var i = 0)
+            }
 
+            for (var dot of deleted_dots) {
+                dotRow = dot.getData('row');
+                dotCol = dot.getData('column');
+
+                //WIP
+            }
+        }
+
+        playRepositionEffects()
+        {
+
+        }
+
+        playDotDeleteEffects(dot){
+            // Define the tween to animate the size
+            var tween = this.tweens.add({
+                targets: dot,
+                scaleX: 0, // scale horizontally to 0
+                scaleY: 0, // scale vertically to 0
+                duration: 200, // duration in milliseconds
+                delay: 0, // delay in milliseconds before the tween starts
+                onComplete: function () {
+                    // Callback function when the tween is complete
+                    dot.destroy(); // Delete the game object from the scene
+                }
+            });
+        }
+
+        playDotConnectedEffects(dot)
+        {
+            const sizeTween = this.tweens.add({
+                targets: dot,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 170,
+                ease: 'Power2.easeIn',
+                easeOut: 'Power4.easeIn',
+                easeParams: [2],
+                yoyo: true,
+                repeat: 0
+            });
+        }
 
         getRandomDotColor()
         {    
