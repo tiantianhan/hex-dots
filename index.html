@@ -35,7 +35,98 @@
     var state = State.IDLE;
 
     // List of currently connected dots while cursor is down
-    var connected_dots = [];
+    var dot_line;
+
+    class DotLine {
+        constructor (scene)
+        {
+            this.scene = scene;
+            this.graphics = [];
+            this.connected_dots = [];
+        }
+
+        addDot(dot)
+        {
+            this.connected_dots.push(dot);
+
+            if(this.connected_dots.length === 1)
+                this.color = dot.getData("color");
+
+            if(this.connected_dots.length >= 2)
+                this.drawLine();
+        }
+
+        canDrawLineTo(dot){
+            if (this.connected_dots.length === 0){
+                return false;
+            }  else {
+                return (this.isFirstDot(dot) || !this.connected_dots.includes(dot)) && 
+                this.isMatchingColor(dot) &&
+                this.isDotNeighbor(dot, this.connected_dots[this.connected_dots.length - 1]);
+            }
+        }
+
+        isDotNeighbor(dot, other) 
+        {
+            const neighbor_deltas = [
+                {x : -1, y : -1},
+                {x : 0, y : -1},
+                {x : -1, y : 0},
+                {x : 1, y : 0},
+                {x : -1, y : 1},
+                {x : 0, y : 1},
+                {x : 1, y : -1},
+                {x : 1, y : 1},
+            ];
+            
+            var deltaY = other.getData('row') - dot.getData('row');
+            var deltaX = other.getData('column') - dot.getData('column');
+
+            for (var neighbor_delta of neighbor_deltas) {
+                if (deltaX === neighbor_delta.x && deltaY === neighbor_delta.y)
+                    return true
+            }
+
+            return false
+        }
+
+        isFirstDot(dot)
+        {
+            return this.connected_dots[0] === dot;
+        }
+
+        isMatchingColor(dot)
+        {
+            return dot.getData('color') ===  dot_line.color;
+        }
+
+        drawLine()
+        {
+            var line = this.scene.add.graphics();
+            var lastDot = this.connected_dots[this.connected_dots.length - 2];
+            var newDot = this.connected_dots[this.connected_dots.length - 1];
+            var lastDotPos = grid_positions[lastDot.getData("row")][lastDot.getData("column")];
+            var newDotPos = grid_positions[newDot.getData("row")][newDot.getData("column")];
+
+            line.lineStyle(2, this.color, 1);
+            line.moveTo(lastDotPos.x, lastDotPos.y);
+            line.lineTo(newDotPos.x, newDotPos.y);
+    
+            line.closePath();
+            line.strokePath();
+            this.graphics.push(line)
+        }
+
+        deleteLine()
+        {
+            this.connected_dots = [];
+            this.color = undefined;
+            for(var line of this.graphics) {
+                line.destroy();
+            }
+        }
+    }
+
 
     class DotsScene extends Phaser.Scene
     {
@@ -51,17 +142,10 @@
         create ()
         {
             this.drawHexTiles();
-            // spawnDot(this, 300, 400)
             this.initializeDots();
-            console.log("Dots : " + dots);
+            dot_line = new DotLine(this)
 
-            for (var i = 0; i < numRows; i++) {
-                for (var j = 0; j < numCols; j++) {
-                    console.log("Color on initialize : " + i + " " + j + " " + dots[i][j].getData('color'));
-                }
-            }
-
-            this.handleInputEvents()
+            this.handleInputEvents();
         }
 
         update ()
@@ -73,7 +157,7 @@
             this.input.on('pointerup', pointer =>
             {
                 if (pointer.leftButtonReleased()) {
-                    onLeftClickReleased();
+                    this.onLeftClickReleased();
                 }
             });
 
@@ -88,7 +172,7 @@
             }, this);
         }
 
-         // Initialize dots
+        // Initialize dots
         initializeDots()
         {
             dots = [];
@@ -96,8 +180,10 @@
                 dots[i] = [];
 
                 for (var j = 0; j < numCols; j++) {
-                    var dot = this.spawnDot(grid_positions[i][j].x, grid_positions[i][j].y, this.getRandomDotColor());
-                    console.log("Color on creation : " +dot.getData('color'));
+                    var color = this.getRandomDotColor();
+                    var dot = this.spawnDot(grid_positions[i][j].x, grid_positions[i][j].y, color);
+                    dot.setData({'color' : color, 'column' : j, 'row' : i});
+
                     dots[i][j] = dot;
                 }
             }
@@ -107,10 +193,7 @@
         {
             const dotSize = 20
             var dot = new Phaser.GameObjects.Ellipse(this, x, y, dotSize, dotSize, color);
-            dot.setData('color', color)
-            console.log("Color: " + dot.getData('color'))
-            
-
+           
             dot.setInteractive();
             dot.on('clicked', this.onDotClick, this);
             dot.on('hover', this.onDotHover, this);
@@ -122,24 +205,20 @@
         onDotClick(dot)
         {
             if (state === State.IDLE) {
-                connected_dots.push(dot)
+                dot_line.addDot(dot);
                 state = State.CONNECT;
                 console.log("State: " + state)
-                console.log("Click Color: " + dot.getData('color'))
-                console.log("Dots: " + connected_dots)
+                console.log("Dot click position r, c: " + dot.getData('row'), dot.getData('column'))
             }
         }
         
         onDotHover(dot)
         {
-            console.log("Dot hover color: " + dot.getData('color'))
+            console.log("Dot hover position r, c: " + dot.getData('row'), dot.getData('column'))
             if (state === State.CONNECT) {
                 // If color matches the line of connected dots, add to the line
-                if(dot.getData('color') === connected_dots[0].getData('color')) {
-                    connected_dots.push(dot)
-                    
-                    console.log("Color 0: " + connected_dots[0].getData('color'))
-                    console.log("Dots: " + connected_dots)
+                if( dot_line.canDrawLineTo(dot)) {
+                    dot_line.addDot(dot);
                 }
             }
         }
@@ -147,11 +226,19 @@
         onLeftClickReleased() 
         {
             if (state === State.CONNECT) {
-                connected_dots = [];
+                // connected_dots = [];
+                dot_line.deleteLine();
                 state = State.IDLE;
                 console.log("State: " + state)
             }
         }
+
+        isDotSameColor(dot, other) 
+        {
+            return dot.getData('color') === other.getData('color');
+        }
+
+
 
         getRandomDotColor()
         {    
