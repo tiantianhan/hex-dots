@@ -49,4 +49,8 @@ class GameConstants {
     static DOT_LINE = {
         lineWidth: 2,
     }
+
+    static TIMER = {
+        initialTime: 1000, // Seconds
+    }
 }

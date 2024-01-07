@@ -1,7 +1,5 @@
 /**
- * Main scene
- *
- * @class
+ * Main game scene.
  */
 class HexDotsScene extends Phaser.Scene
 {
@@ -12,23 +10,22 @@ class HexDotsScene extends Phaser.Scene
 
     constructor ()
     {
-        super({key: 'HexDotsScene'});
+        super({key: 'hexDotsScene'});
 
-        this.numRows = GameConstants.GRID.numRowsDefault;
-        this.numCols = GameConstants.GRID.numColsDefault;
-        Dot.numColors = GameConstants.DOT.numColorsDefault;
+        this.numRows;
+        this.numCols;
+        this.gameSettings;
 
         // Contains grid, line and dots so that their positions
         // are in the same coordinate space
-        this.main_container;
+        this.mainContainer;
         this.grid;
-        this.dot_line;
+        this.dotLine;
         // Positions where dots spawn
         this.spawnPositions;
         // Row number x column number array of dots
         this.dots;
 
-        // Overlay
         this.overlay;
 
         // Container for UI elements
@@ -39,30 +36,35 @@ class HexDotsScene extends Phaser.Scene
 
     init(data)
     {
-        this.numRows = data.numRows;
-        this.numCols = data.numCols;
-        Dot.numColors = data.numColors;
+        this.numRows = data.settings.numRows || GameConstants.GRID.numRowsDefault;
+        this.numCols = data.settings.numCols || GameConstants.GRID.numColsDefault;
+        Dot.numColors = data.settings.numColors || GameConstants.DOT.numColorsDefault;
+
+        this.gameSettings = data.settings;
     }
 
     preload ()
     {
+        this.load.image('particle', 'assets/particle.png');
     }
 
     create ()
     {
-        this.cameras.main.fadeIn(200, 255, 255, 255)
+        GameUtilities.fadeInScene(this);
+
+        // this.add.image(400, 300, 'particle').setTint(0xff00ff);
 
         // Set up game objects
-        this.main_container = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
+        this.mainContainer = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
         
         this.grid = new HexGrid(this, this.numRows, this.numCols);
-        this.main_container.add(this.grid);
+        this.mainContainer.add(this.grid);
 
         this.initializeDotSpawnPositions();
         
-        this.initializeDots(this.main_container);
+        this.initializeDots(this.mainContainer);
 
-        this.add.existing(this.main_container);
+        this.add.existing(this.mainContainer);
 
         this.overlay = new TintedOverlay(this, 0, 0);
         this.add.existing(this.overlay);
@@ -84,27 +86,26 @@ class HexDotsScene extends Phaser.Scene
                 this.onLeftClickReleased();
             }
         });
+    }
 
-        this.input.on('gameobjectdown', function (pointer, gameObject)
-        {
-            gameObject.emit('clicked', gameObject);
-        }, this);
-
-        this.input.on('gameobjectover', function (pointer, gameObject)
-        {
-            gameObject.emit('hover', gameObject);
-        }, this);
+    onGameComplete()
+    {
+        GameUtilities.fadeOutScene(this, 'endScene', {score: this.score.score, settings: this.gameSettings});
     }
 
     initializeUI()
     {
         this.uiContainer = this.add.container(10, 10);
-        const scoreText = this.add.text(0, 0, "Score: ", { fill: GameConstants.TEXT.color });
-        this.uiContainer.add(scoreText);
+        this.score = new Score(this,  0, 0);
+        this.timer = new CountdownTimer(this,  GameConstants.WIDTH * 0.5, 0, GameConstants.TIMER.initialTime);
+        this.timer.eventEmitter.on('timerComplete', this.onGameComplete, this);
+        this.uiContainer.add([this.score, this.timer]);
     }
 
-    initializeDots(main_container)
+    initializeDots(mainContainer)
     {
+        // Destroy existing dots if any from when this scene was last played
+        this.destroyExistingDots();
         this.dots = [];
 
         for (var i = 0; i < this.numRows; i++) {
@@ -115,8 +116,22 @@ class HexDotsScene extends Phaser.Scene
                 dot.row = i;
                 dot.column = j;
                 
-                main_container.add(dot);
+                mainContainer.add(dot);
                 this.dots[i][j] = dot;
+            }
+        }
+    }
+
+    destroyExistingDots()
+    {
+        if(this.dots){
+            for(var i = 0; i < this.dots.length; i++){
+                if(this.dots[i]){
+                    for(var j = 0; j < this.dots[i].length; j++) {
+                        if(this.dots[i][j]) this.dots[i][j].destroy();
+                    }
+                }
+                
             }
         }
     }
@@ -128,45 +143,53 @@ class HexDotsScene extends Phaser.Scene
         for(var pos of this.grid.positions[0]){
             this.spawnPositions.push({x: pos.x, y: pos.y - 200});
         }
-        for(var spawnPos of this.spawnPositions){
-            var dot = this.spawnDot(spawnPos.x, spawnPos.y);
-            this.main_container.add(dot);
-        }
     }
 
     spawnDot(x, y) 
     {
         var dot = new Dot(this, x, y, Dot.getRandomDotColor());
         
-        // dot.setInteractive();
-        dot.on('clicked', this.onDotClick, this);
-        dot.on('hover', this.onDotHover, this);
+        dot.on('pointerdown', () => { this.onDotClick(dot) }, this);
+        dot.on('pointerover', () => { this.onDotHover(dot) }, this);
+
         return dot;
+    }
+
+    emitDotClickParticle(x, y, color)
+    {
+        this.emitter = this.add.particles(0, 0, 'particle', {
+            scale: { start: 1, end: 3 },
+            speed: { min: 0, max: 0 },
+            lifespan: 200,
+            tint:color,
+            alpha: {start: 0.5, end: 0},
+            emitting: false,
+        });
+        this.mainContainer.add(this.emitter);
+        this.emitter.emitParticleAt(x, y);
     }
 
     onDotClick(dot)
     {
         if (this.state === HexDotsScene.State.IDLE) {
-            this.dot_line = new DotLine(this);
-            this.main_container.add(this.dot_line);
-            this.dot_line.addDot(dot, this.grid.positions);
+            this.dotLine = new DotLine(this);
+            this.mainContainer.add(this.dotLine);
+            this.dotLine.addDot(dot, this.grid.positions);
 
             dot.playDotConnectedEffects();
 
             this.state = HexDotsScene.State.CONNECT;
-
-            console.log("State: " + this.state)
-            console.log("Dot click position r, c: " + dot.row, dot.column)
         }
     }
     
     onDotHover(dot)
     {
-        console.log("Dot hover position r, c: " + dot.row, dot.column)
+        // console.log("Dot hover position r, c: " + dot.row, dot.column)
+
         if (this.state === HexDotsScene.State.CONNECT) {
             // If color matches the line of connected dots, add to the line
-            if( this.dot_line.canDrawLineTo(dot)) {
-                this.dot_line.addDot(dot, this.grid.positions);
+            if( this.dotLine.canDrawLineTo(dot)) {
+                this.dotLine.addDot(dot, this.grid.positions);
                 dot.playDotConnectedEffects();
             } 
         }
@@ -175,31 +198,28 @@ class HexDotsScene extends Phaser.Scene
     onLeftClickReleased() 
     {
         if (this.state === HexDotsScene.State.CONNECT) {
-            if (this.dot_line.isLine()) {
+            if (this.dotLine.isLine()) {
                 var dotsToDelete = this.getDotsToDelete();
+                this.score.addScore(dotsToDelete.length);
                 this.repositionDots(dotsToDelete);
 
-                if(this.dot_line.isLoop())
-                    this.overlay.flashOverlay(this.dot_line.color);
+                if(this.dotLine.isLoop())
+                    this.overlay.flashOverlay(this.dotLine.color);
             }
 
-
-
-            this.dot_line.destroy();
+            this.dotLine.destroy();
             this.state = HexDotsScene.State.IDLE;
-            
-            console.log("State: " + this.state)
         }
     }
 
     getDotsToDelete()
     {
         var dotsToDelete;
-        if(this.dot_line.isLoop()){
+        if(this.dotLine.isLoop()){
             // If we made a loop, delete dots of the same color
-            dotsToDelete = this.getDotsWithColor(this.dot_line.color);
+            dotsToDelete = this.getDotsWithColor(this.dotLine.color);
         } else {
-            dotsToDelete = this.dot_line.getDots();
+            dotsToDelete = this.dotLine.getDots();
         }
 
         return dotsToDelete;
@@ -245,7 +265,7 @@ class HexDotsScene extends Phaser.Scene
             if(numSpawn[j] > 0){
                 for(var s = 1; s <= numSpawn[j]; s++){
                     var dot = this.spawnDot(this.spawnPositions[j].x, this.spawnPositions[j].y);
-                    this.main_container.add(dot);
+                    this.mainContainer.add(dot);
                     dot.row = s - 1;
                     dot.column = j;
                     newDots[dot.row][dot.column] = dot;
@@ -253,9 +273,10 @@ class HexDotsScene extends Phaser.Scene
                     // The closer the target position is to the top, the 
                     // longer we wait before we drop the dot
                     var dropDelayFactor = numSpawn[j] - s;
+                    var dropDelay = dropDelayFactor * dot.moveTime;
 
                     // Dots spawned above first row has "initial row" of -1
-                    dot.moveThroughPositions(this.getShiftPositions(-1, dot.column, s), dropDelayFactor);
+                    dot.moveThroughPositions(this.getShiftPositions(-1, dot.column, s), dropDelay);
                 }
                 
             }

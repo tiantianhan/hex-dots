@@ -1,3 +1,6 @@
+/**
+ * Allows adjustment of grid rows and columns and number of dot colors.
+ */
 class SettingsScene extends Phaser.Scene
 {
     constructor ()
@@ -24,36 +27,36 @@ class SettingsScene extends Phaser.Scene
 
     create()
     {
-        this.main_container = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
+        this.mainContainer = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
         this.updateGrid();
 
         const buttonsPosY = GameConstants.HEIGHT - GameConstants.MARGINS.top - 40;
 
         // Start button
         this.startButton = new TextButton(this, 0, buttonsPosY, "Start");
-        this.main_container.add(this.startButton);
+        this.mainContainer.add(this.startButton);
 
         // Row - + buttons
         const rowText = this.add.text(100, buttonsPosY, "Rows:", { fill: GameConstants.TEXT.color });
         this.minusRowButton = new TextButton(this, 155, buttonsPosY, "-");
         this.addRowButton = new TextButton(this, 190, buttonsPosY, "+");
-        this.main_container.add([rowText, this.addRowButton, this.minusRowButton]);
+        this.mainContainer.add([rowText, this.addRowButton, this.minusRowButton]);
         
         // Column - + buttons
         const columnText = this.add.text(250, buttonsPosY, "Columns:", { fill: GameConstants.TEXT.color });
         this.minusColumnButton = new TextButton(this, 335, buttonsPosY, "-");
         this.addColumnButton = new TextButton(this, 370, buttonsPosY, "+");
-        this.main_container.add([columnText, this.addColumnButton, this.minusColumnButton]);
+        this.mainContainer.add([columnText, this.addColumnButton, this.minusColumnButton]);
 
         // Color - + buttons
         const colorText = this.add.text(480, buttonsPosY, "Colors:", { fill: GameConstants.TEXT.color });
         this.minusColorButton = new TextButton(this, 565, buttonsPosY, "-");
         this.addColorButton = new TextButton(this, 600, buttonsPosY, "+");
-        this.main_container.add([colorText, this.addColorButton, this.minusColorButton]);
+        this.mainContainer.add([colorText, this.addColorButton, this.minusColorButton]);
 
         // Color swatches
         this.swatchContainer = this.add.container(450, buttonsPosY - 15);
-        this.main_container.add(this.swatchContainer);
+        this.mainContainer.add(this.swatchContainer);
         this.updateColorSwatches();
 
         this.handleInputs();
@@ -96,11 +99,8 @@ class SettingsScene extends Phaser.Scene
 
     startMainScene()
     {
-        // Use camera for a white out scene transition
-        this.cameras.main.fadeOut(200, 255, 255, 255)
-        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, (cam, effect) => {
-            this.scene.start('HexDotsScene', {numRows: this.numRows, numCols: this.numCols, numColors: this.numColors});
-        })
+        var settings = new GameSettings(this.numRows, this.numCols, this.numColors);
+        GameUtilities.fadeOutScene(this, 'hexDotsScene', {settings: settings});
     }
 
     clampValues()
@@ -116,7 +116,7 @@ class SettingsScene extends Phaser.Scene
             this.grid.destroy();
 
         this.grid = new HexGrid(this, this.numRows, this.numCols);
-        this.main_container.add(this.grid);
+        this.mainContainer.add(this.grid);
     }
 
     updateColorSwatches()

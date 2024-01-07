@@ -4,8 +4,6 @@ class TextButton extends Phaser.GameObjects.Text {
         super(scene, x, y, text, { fill: GameConstants.TEXT.color });
 
         this.scene = scene;
-        // this.text = this.scene.add.text(0, 0, text, );
-        // this.text.setInteractive();
         this.setInteractive();
             
         // Tint when hovered over
@@ -16,8 +14,6 @@ class TextButton extends Phaser.GameObjects.Text {
         this.on('pointerout', () => {
             this.setFill( GameConstants.TEXT.color);
         });
-
-        // this.add(this.text);
     }
     
 }

@@ -8,7 +8,8 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
         this.scene = scene;
         this.dotSize = dotSize;
-        this.hitCircleSize = dotSize * 1.5;
+        // TODO: use larger hit box
+        // this.hitCircleSize = dotSize * 1.5;
         this.moveTime = 200; //Time it takes for dot to move one grid unit
         this.color = color;
         this.row = undefined;
@@ -16,13 +17,18 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
         this.connectedTween;
         this.destroyTween;
+        this.moveTween;
         this.setUpConnectedAnimation();
         this.setUpDestroyAnimation();
 
         this.setInteractive();
+        // TODO: use larger hit box
         // this.setInteractive(new Phaser.Geom.Ellipse(x, y, this.hitCircleSize, this.hitCircleSize), Phaser.Geom.Ellipse.Contains);
 
+        
         this.scene.add.existing(this);
+
+        // this.scene.add.image(400, 300, 'particle').setTint(0xff0000);
     }
 
     /**
@@ -72,9 +78,29 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
     playDotConnectedEffects()
     {
+        if(this.connectedTween.isDestroyed())
+            return;
+
         // The connected animation should not interfere with the destroy animation
-        if(!this.destroyTween.isPlaying())
+        if(!this.destroyTween.isPlaying()){
             this.connectedTween.play();
+            this.emitParticle();
+        }
+            
+    }
+
+    emitParticle()
+    {
+        this.emitter = this.scene.add.particles(0, 0, 'particle', {
+            scale: { start: 1, end: 3 },
+            speed: { min: 0, max: 0 },
+            lifespan: 200,
+            tint:this.color,
+            alpha: {start: 0.5, end: 0},
+            emitting: false,
+        });
+        // this.mainContainer.add(this.emitter);
+        this.emitter.emitParticleAt(this.x, this.y);
     }
 
     destroyWithEffects()
@@ -83,36 +109,31 @@ class Dot extends Phaser.GameObjects.Ellipse{
         this.destroyTween.play();
     }
 
-    playRepositionEffects(targetX, targetY)
-    {
-        this.scene.tweens.add({
+    moveThroughPositions(positions, delay){
+        var tweenChain = [];
+        for(var i = 0; i < positions.length; i++) {
+            var tween = this.getMoveTweenForPosition(positions[i]);
+            tweenChain.push(tween);
+        }
+
+        // First tween has the delay
+        tweenChain[0].delay = delay;
+
+        this.moveTween = this.scene.tweens.chain({
             targets: this,
-            x: targetX,
-            y: targetY,
-            duration: 200, 
-            ease: 'Linear',
-            repeat: 0,
-            yoyo: false,
+            tweens: tweenChain,
         });
     }
 
-    moveThroughPositions(positions, delayFactor)
-    {
-        this.scene.tweens.add({
-            targets: this,
-            x: positions[0].x,
-            y: positions[0].y,
+    getMoveTweenForPosition(position) {
+        return {
+            x: position.x,
+            y: position.y,
+            delay: 0,
             duration: this.moveTime, 
             ease: 'Quad',
             repeat: 0,
             yoyo: false,
-            delay: this.moveTime * delayFactor,
-            onComplete: () => {
-                // Remove first element in list of positions and continue moving
-                positions.shift();
-                if(positions.length > 0)
-                    this.moveThroughPositions(positions);
-            }
-        });
+        }   
     }
 }

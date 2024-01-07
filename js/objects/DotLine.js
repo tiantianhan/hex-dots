@@ -12,7 +12,7 @@ class DotLine extends Phaser.GameObjects.Container{
         this.color = undefined;
         this.lineWidth = GameConstants.DOT_LINE.lineWidth;
 
-        this.connected_dots = [];
+        this.connectedDots = [];
         this.uniqueDots = [];
 
         this.lineToPointer;
@@ -27,28 +27,28 @@ class DotLine extends Phaser.GameObjects.Container{
         return this.uniqueDots;
     }
 
-    addDot(dot, grid_positions)
+    addDot(dot, gridPositions)
     {
-        this.connected_dots.push(dot);
-        this.lastDotPosition = grid_positions[dot.row][dot.column];
+        this.connectedDots.push(dot);
+        this.lastDotPosition = gridPositions[dot.row][dot.column];
 
         if(!this.uniqueDots.includes(dot))
             this.uniqueDots.push(dot);
 
-        if(this.connected_dots.length === 1)
+        if(this.connectedDots.length === 1)
             this.color = dot.color;
 
-        if(this.connected_dots.length >= 2)
-            this.drawLineBetweenDots(grid_positions);
+        if(this.connectedDots.length >= 2)
+            this.drawLineBetweenDots(gridPositions);
     }
 
     canDrawLineTo(dot){
-        if (this.connected_dots.length === 0){
+        if (this.connectedDots.length === 0){
             return false;
         }  else {
-            return (this.isFirstDot(dot) || !this.connected_dots.includes(dot)) && 
+            return (this.isFirstDot(dot) || !this.connectedDots.includes(dot)) && 
             this.isMatchingColor(dot) &&
-            this.isDotNeighbor(dot, this.connected_dots[this.connected_dots.length - 1]);
+            this.isDotNeighbor(dot, this.connectedDots[this.connectedDots.length - 1]);
         }
     }
 
@@ -59,17 +59,17 @@ class DotLine extends Phaser.GameObjects.Container{
 
     getFirstDot()
     {
-        return this.connected_dots[0];
+        return this.connectedDots[0];
     }
 
     getLastDot()
     {
-        return this.connected_dots[this.connected_dots.length - 1];
+        return this.connectedDots[this.connectedDots.length - 1];
     }
 
     isLine()
     {
-        return this.connected_dots.length > 1;
+        return this.connectedDots.length > 1;
     }
 
     isLoop()
@@ -103,12 +103,15 @@ class DotLine extends Phaser.GameObjects.Container{
         }
     }
 
-    drawLineBetweenDots(grid_positions)
+    drawLineBetweenDots(gridPositions)
     {
-        var lastDot = this.connected_dots[this.connected_dots.length - 2];
-        var newDot = this.connected_dots[this.connected_dots.length - 1];
-        var lastDotPos = grid_positions[lastDot.row][lastDot.column];
-        var newDotPos = grid_positions[newDot.row][newDot.column];
+        // If object has been destroyed, do nothing
+        if(!this.scene) return;
+
+        var lastDot = this.connectedDots[this.connectedDots.length - 2];
+        var newDot = this.connectedDots[this.connectedDots.length - 1];
+        var lastDotPos = gridPositions[lastDot.row][lastDot.column];
+        var newDotPos = gridPositions[newDot.row][newDot.column];
 
         this.drawLine(lastDotPos, newDotPos);
     }
