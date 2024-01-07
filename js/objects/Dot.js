@@ -1,15 +1,17 @@
-class Dot extends Phaser.GameObjects.Ellipse{
+class Dot extends Phaser.GameObjects.Container{
     static numColors;
 
-    constructor (scene, x, y, color)
+    constructor (scene, x, y, color, children)
     {
+        super(scene, x, y, children);
+
         const dotSize = GameConstants.DOT.size;
-        super(scene, x, y, dotSize, dotSize, color);
+        this.circle = new Phaser.GameObjects.Ellipse(scene, 0, 0, dotSize, dotSize, color);
+        this.scene.add.existing(this.circle);
 
         this.scene = scene;
         this.dotSize = dotSize;
-        // TODO: use larger hit box
-        // this.hitCircleSize = dotSize * 1.5;
+        this.hitCircleSize = dotSize * 1.5;
         this.moveTime = 200; //Time it takes for dot to move one grid unit
         this.color = color;
         this.row = undefined;
@@ -21,14 +23,10 @@ class Dot extends Phaser.GameObjects.Ellipse{
         this.setUpConnectedAnimation();
         this.setUpDestroyAnimation();
 
-        this.setInteractive();
-        // TODO: use larger hit box
-        // this.setInteractive(new Phaser.Geom.Ellipse(x, y, this.hitCircleSize, this.hitCircleSize), Phaser.Geom.Ellipse.Contains);
-
+        this.setInteractive(new Phaser.Geom.Ellipse(0, 0, this.hitCircleSize, this.hitCircleSize), Phaser.Geom.Ellipse.Contains);
         
         this.scene.add.existing(this);
-
-        // this.scene.add.image(400, 300, 'particle').setTint(0xff0000);
+        this.add(this.circle);
     }
 
     /**
@@ -48,7 +46,7 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
     setUpConnectedAnimation(){
         this.connectedTween = this.scene.tweens.add({
-            targets: this,
+            targets: this.circle,
             scaleX: 1.2,
             scaleY: 1.2,
             duration: 170,
@@ -63,7 +61,7 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
     setUpDestroyAnimation(){
         this.destroyTween = this.scene.tweens.add({
-            targets: this,
+            targets: this.circle,
             scaleX: 0,
             scaleY: 0,
             duration: 200,
@@ -78,11 +76,9 @@ class Dot extends Phaser.GameObjects.Ellipse{
 
     playDotConnectedEffects()
     {
-        if(this.connectedTween.isDestroyed())
-            return;
-
         // The connected animation should not interfere with the destroy animation
         if(!this.destroyTween.isPlaying()){
+            this.setUpConnectedAnimation();
             this.connectedTween.play();
             this.emitParticle();
         }
@@ -99,8 +95,8 @@ class Dot extends Phaser.GameObjects.Ellipse{
             alpha: {start: 0.5, end: 0},
             emitting: false,
         });
-        // this.mainContainer.add(this.emitter);
-        this.emitter.emitParticleAt(this.x, this.y);
+        this.add(this.emitter);
+        this.emitter.emitParticleAt(0, 0);
     }
 
     destroyWithEffects()
@@ -119,6 +115,9 @@ class Dot extends Phaser.GameObjects.Ellipse{
         // First tween has the delay
         tweenChain[0].delay = delay;
 
+        tweenChain[tweenChain.length - 1].ease = 'Bounce';
+        tweenChain[tweenChain.length - 1].duration = this.moveTime * 1.5;
+
         this.moveTween = this.scene.tweens.chain({
             targets: this,
             tweens: tweenChain,
@@ -135,5 +134,9 @@ class Dot extends Phaser.GameObjects.Ellipse{
             repeat: 0,
             yoyo: false,
         }   
+    }
+
+    customEase(t) {
+        return t; //* t;
     }
 }

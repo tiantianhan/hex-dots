@@ -6,6 +6,7 @@ class HexDotsScene extends Phaser.Scene
     static State = { 
         IDLE: 0,
         CONNECT: 1,
+        REPOSITION: 3,
     };
 
     constructor ()
@@ -198,6 +199,8 @@ class HexDotsScene extends Phaser.Scene
     onLeftClickReleased() 
     {
         if (this.state === HexDotsScene.State.CONNECT) {
+            this.state = HexDotsScene.State.REPOSITION;
+
             if (this.dotLine.isLine()) {
                 var dotsToDelete = this.getDotsToDelete();
                 this.score.addScore(dotsToDelete.length);
@@ -320,9 +323,14 @@ class HexDotsScene extends Phaser.Scene
 
             var i = 0;
             // Spawn dot for each deleted dot starting from the first row
-            while(isNaN(shift[i][j])){
-                i++;
-                numSpawn[j] += 1;
+            try{
+                while(isNaN(shift[i][j])){
+                    i++;
+                    numSpawn[j] += 1;
+                }
+            } catch (error){
+                //TODO
+                console.log("Shift undefined error");
             }
 
             // Spawn as many dots as the dots below will shift
