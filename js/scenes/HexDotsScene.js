@@ -1,33 +1,47 @@
-// Game data
-const numRows = 6;
-const numCols = 7;
-const numColors = 4;
-
-// Grid view data
-// Row number x column number array of x, y positions
-// var grid_positions = [];
-var grid;
-
-// Row number x column number array of dots
-var dots;
-
-// Connecting dots
-// State of the scene
-const State = Object.freeze({ 
-    IDLE: 0,
-    CONNECT: 1,
-    REPOSITION: 3
-});
-var state = State.IDLE;
-
-// List of currently connected dots while cursor is down
-var dot_line;
-
+/**
+ * Main scene
+ *
+ * @class
+ */
 class HexDotsScene extends Phaser.Scene
 {
+    static State = { 
+        IDLE: 0,
+        CONNECT: 1,
+    };
+
     constructor ()
     {
-        super();
+        super({key: 'HexDotsScene'});
+
+        this.numRows = GameConstants.GRID.numRowsDefault;
+        this.numCols = GameConstants.GRID.numColsDefault;
+        Dot.numColors = GameConstants.DOT.numColorsDefault;
+
+        // Contains grid, line and dots so that their positions
+        // are in the same coordinate space
+        this.main_container;
+        this.grid;
+        this.dot_line;
+        // Positions where dots spawn
+        this.spawnPositions;
+        // Row number x column number array of dots
+        this.dots;
+
+        // Overlay
+        this.overlay;
+
+        // Container for UI elements
+        this.uiContainer;
+
+        this.state = HexDotsScene.State.IDLE;
+    }
+
+    init(data)
+    {
+        this.numRows = data.numRows;
+        this.numCols = data.numCols;
+        Dot.numColors = data.numColors;
     }
 
     preload ()
@@ -36,9 +50,24 @@ class HexDotsScene extends Phaser.Scene
 
     create ()
     {
-        grid = new HexGrid(this);
-        this.initializeDots();
-        dot_line = new DotLine(this);
+        this.cameras.main.fadeIn(200, 255, 255, 255)
+
+        // Set up game objects
+        this.main_container = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
+        
+        this.grid = new HexGrid(this, this.numRows, this.numCols);
+        this.main_container.add(this.grid);
+
+        this.initializeDotSpawnPositions();
+        
+        this.initializeDots(this.main_container);
+
+        this.add.existing(this.main_container);
+
+        this.overlay = new TintedOverlay(this, 0, 0);
+        this.add.existing(this.overlay);
+
+        this.initializeUI();
 
         this.handleInputEvents();
     }
@@ -67,153 +96,235 @@ class HexDotsScene extends Phaser.Scene
         }, this);
     }
 
-    // Initialize dots
-    initializeDots()
+    initializeUI()
     {
-        dots = [];
-        for (var i = 0; i < numRows; i++) {
-            dots[i] = [];
+        this.uiContainer = this.add.container(10, 10);
+        const scoreText = this.add.text(0, 0, "Score: ", { fill: GameConstants.TEXT.color });
+        this.uiContainer.add(scoreText);
+    }
 
-            for (var j = 0; j < numCols; j++) {
-                var color = this.getRandomDotColor();
-                var dot = this.spawnDot(grid.positions[i][j].x, grid.positions[i][j].y, color);
-                dot.setData({'color' : color, 'column' : j, 'row' : i});
+    initializeDots(main_container)
+    {
+        this.dots = [];
 
-                dots[i][j] = dot;
+        for (var i = 0; i < this.numRows; i++) {
+            this.dots[i] = [];
+
+            for (var j = 0; j < this.numCols; j++) {
+                var dot = this.spawnDot(this.grid.positions[i][j].x, this.grid.positions[i][j].y);
+                dot.row = i;
+                dot.column = j;
+                
+                main_container.add(dot);
+                this.dots[i][j] = dot;
             }
         }
     }
 
-    spawnDot(x, y, color) 
+    initializeDotSpawnPositions()
     {
-        const dotSize = 20
-        var dot = new Phaser.GameObjects.Ellipse(this, x, y, dotSize, dotSize, color);
+        this.spawnPositions = [];
+        // Spawn positions are directly above each position in the first row
+        for(var pos of this.grid.positions[0]){
+            this.spawnPositions.push({x: pos.x, y: pos.y - 200});
+        }
+        for(var spawnPos of this.spawnPositions){
+            var dot = this.spawnDot(spawnPos.x, spawnPos.y);
+            this.main_container.add(dot);
+        }
+    }
+
+    spawnDot(x, y) 
+    {
+        var dot = new Dot(this, x, y, Dot.getRandomDotColor());
         
-        dot.setInteractive();
+        // dot.setInteractive();
         dot.on('clicked', this.onDotClick, this);
         dot.on('hover', this.onDotHover, this);
-
-        this.add.existing(dot);
         return dot;
     }
 
     onDotClick(dot)
     {
-        if (state === State.IDLE) {
-            dot_line.addDot(dot);
-            this.playDotConnectedEffects(dot);
-            state = State.CONNECT;
-            console.log("State: " + state)
-            console.log("Dot click position r, c: " + dot.getData('row'), dot.getData('column'))
+        if (this.state === HexDotsScene.State.IDLE) {
+            this.dot_line = new DotLine(this);
+            this.main_container.add(this.dot_line);
+            this.dot_line.addDot(dot, this.grid.positions);
+
+            dot.playDotConnectedEffects();
+
+            this.state = HexDotsScene.State.CONNECT;
+
+            console.log("State: " + this.state)
+            console.log("Dot click position r, c: " + dot.row, dot.column)
         }
     }
     
     onDotHover(dot)
     {
-        console.log("Dot hover position r, c: " + dot.getData('row'), dot.getData('column'))
-        if (state === State.CONNECT) {
+        console.log("Dot hover position r, c: " + dot.row, dot.column)
+        if (this.state === HexDotsScene.State.CONNECT) {
             // If color matches the line of connected dots, add to the line
-            if( dot_line.canDrawLineTo(dot)) {
-                dot_line.addDot(dot, grid.positions);
-                this.playDotConnectedEffects(dot);
-                
-                if(dot_line.isLoop()){
-                    //TODO
-                }
-            }
+            if( this.dot_line.canDrawLineTo(dot)) {
+                this.dot_line.addDot(dot, this.grid.positions);
+                dot.playDotConnectedEffects();
+            } 
         }
     }
 
     onLeftClickReleased() 
     {
-        if (state === State.CONNECT) {
-            if (dot_line.isLine()) {
-                var connected_dots = dot_line.getDots();
-                // repositionDots(connected_dots);
-                for (var dot of connected_dots){
-                    this.playDotDeleteEffects(dot)
-                }
-                // state = State.REPOSITION;
-            } else {
-                state = State.IDLE;
+        if (this.state === HexDotsScene.State.CONNECT) {
+            if (this.dot_line.isLine()) {
+                var dotsToDelete = this.getDotsToDelete();
+                this.repositionDots(dotsToDelete);
+
+                if(this.dot_line.isLoop())
+                    this.overlay.flashOverlay(this.dot_line.color);
             }
 
-            dot_line.deleteLine();
+
+
+            this.dot_line.destroy();
+            this.state = HexDotsScene.State.IDLE;
             
-            console.log("State: " + state)
+            console.log("State: " + this.state)
         }
     }
 
-    isDotSameColor(dot, other) 
+    getDotsToDelete()
     {
-        return dot.getData('color') === other.getData('color');
-    }
-
-    repositionDots(deleted_dots)
-    {
-        var shift = []
-        for (var i = 0; i < numRows; i++) {
-            // for(var i = 0)
+        var dotsToDelete;
+        if(this.dot_line.isLoop()){
+            // If we made a loop, delete dots of the same color
+            dotsToDelete = this.getDotsWithColor(this.dot_line.color);
+        } else {
+            dotsToDelete = this.dot_line.getDots();
         }
 
-        for (var dot of deleted_dots) {
-            dotRow = dot.getData('row');
-            dotCol = dot.getData('column');
-
-            //WIP
-        }
+        return dotsToDelete;
     }
 
-    playRepositionEffects()
+    getDotsWithColor(color)
     {
-
-    }
-
-    playDotDeleteEffects(dot){
-        // Define the tween to animate the size
-        var tween = this.tweens.add({
-            targets: dot,
-            scaleX: 0, // scale horizontally to 0
-            scaleY: 0, // scale vertically to 0
-            duration: 200, // duration in milliseconds
-            delay: 0, // delay in milliseconds before the tween starts
-            onComplete: function () {
-                // Callback function when the tween is complete
-                dot.destroy(); // Delete the game object from the scene
+        var dotsWithColor = [];
+        for(var i = 0; i < this.numRows; i++) {
+            for (var j = 0; j < this.numCols; j++) {
+                if(this.dots[i][j].color === color){
+                    dotsWithColor.push(this.dots[i][j])
+                }
             }
-        });
+        }
+
+        return dotsWithColor;
     }
 
-    playDotConnectedEffects(dot)
+    repositionDots(dotsToDelete)
     {
-        const sizeTween = this.tweens.add({
-            targets: dot,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 170,
-            ease: 'Power2.easeIn',
-            easeOut: 'Power4.easeIn',
-            easeParams: [2],
-            yoyo: true,
-            repeat: 0
-        });
+        // Matrix with new positions of the dots
+        var newDots = GameUtilities.initializeArray(this.numRows, this.numCols, 0);
+
+        // Determine how much each dot should shift downwards
+        var shift = this.calculateShift(dotsToDelete);
+
+        // Shift the dots, starting with the bottom row
+        for (var i = this.numRows - 1; i >= 0; i--){
+            for (var j = 0; j < this.numCols; j++){
+                var dot = this.dots[i][j];
+
+                if(shift[i][j]){
+                    this.shiftDot(dot, shift[i][j]);
+                }
+                newDots[dot.row][dot.column] = dot;
+            }
+        }
+
+        // Spawn replacement dots
+        var numSpawn = this.calculateNumSpawn(shift);
+        for (var j = 0; j < this.numCols; j++){
+            if(numSpawn[j] > 0){
+                for(var s = 1; s <= numSpawn[j]; s++){
+                    var dot = this.spawnDot(this.spawnPositions[j].x, this.spawnPositions[j].y);
+                    this.main_container.add(dot);
+                    dot.row = s - 1;
+                    dot.column = j;
+                    newDots[dot.row][dot.column] = dot;
+                    
+                    // The closer the target position is to the top, the 
+                    // longer we wait before we drop the dot
+                    var dropDelayFactor = numSpawn[j] - s;
+
+                    // Dots spawned above first row has "initial row" of -1
+                    dot.moveThroughPositions(this.getShiftPositions(-1, dot.column, s), dropDelayFactor);
+                }
+                
+            }
+        }
+
+        // Delete the dots removed from the grid
+        for (var i = 0; i < dotsToDelete.length; i++){
+            dotsToDelete[i].destroyWithEffects()
+        }
+
+        // Update matrix tracking positions of the dots
+        this.dots = newDots;
     }
 
-    getRandomDotColor()
-    {    
-        const colorList = [
-            0xf46d43,
-            0xd8e594,
-            0x3288bd,
-            0x66c2a5,
-            0xfdae61,
-            0xd53e4f,
-            0xfee08b,
-            0xabdda4
-        ]
+    calculateShift(dotsToDelete){
+        // An array to keep track of how much to shift each dot downward
+        var shift = GameUtilities.initializeArray(this.numRows, this.numCols, 0);
 
-        // Random integer within interval [0, numColors)
-        var randomIndex = Math.floor(Math.random() * numColors);
-        return colorList[randomIndex];
+        // Everything in the column above the deleted dot
+        // must shift down 1 for each deleted dot below
+        for (var dot of dotsToDelete) {
+            for(var i = 0; i < dot.row; i++){
+                shift[i][dot.column] += 1;
+            }
+        }
+
+        for (var dot of dotsToDelete){
+            // The deleted dot does not need to shift
+            shift[dot.row][dot.column] = NaN;
+        }
+
+        return shift;
     }
+
+    calculateNumSpawn(shift){
+        // Number of dots to spawn for each column
+        var numSpawn = [];
+
+        for (var j = 0; j < this.numCols; j++){
+            numSpawn[j] = 0;
+
+            var i = 0;
+            // Spawn dot for each deleted dot starting from the first row
+            while(isNaN(shift[i][j])){
+                i++;
+                numSpawn[j] += 1;
+            }
+
+            // Spawn as many dots as the dots below will shift
+            numSpawn[j] += shift[i][j];
+        }
+        return numSpawn;
+    }
+
+    shiftDot(dot, shift){
+        dot.moveThroughPositions(this.getShiftPositions(dot.row, dot.column, shift));
+        dot.row += shift;
+    }
+
+    // The dot does not go directly to the target new position, instead it moves through 
+    // each grid position in each row above the target new position
+    // This returns a list of positions the dot should move through to make the shift
+    getShiftPositions(row, col, shift){
+        var positions  = [];
+        for (var s = 1; s <= shift; s++){
+            var newPos = this.grid.positions[row + s][col]
+            positions.push(newPos);
+        }
+        return positions;
+    }
+
 }

@@ -1,10 +1,10 @@
 var config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    backgroundColor: '#eeeeee',
+    width: GameConstants.WIDTH,
+    height: GameConstants.HEIGHT,
+    backgroundColor: GameConstants.BACKGROUND.color,
     parent: 'game-container',
-    scene: [HexDotsScene],
+    scene: [SettingsScene, HexDotsScene],
 };
 
 var game = new Phaser.Game(config);

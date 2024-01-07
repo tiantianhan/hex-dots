@@ -1,28 +1,45 @@
-class DotLine extends Phaser.GameObjects.GameObject{
-    constructor (scene)
+/**
+ * Line that joins connected dots
+ *
+ * @class
+ */
+class DotLine extends Phaser.GameObjects.Container{
+    constructor (scene, x, y, children)
     {
-        super(scene, 'dotLine');
-        this.scene = scene;
-        this.graphics = [];
-        this.connected_dots = [];
+        super(scene, x, y, children);
 
+        this.scene = scene;
+        this.color = undefined;
+        this.lineWidth = GameConstants.DOT_LINE.lineWidth;
+
+        this.connected_dots = [];
+        this.uniqueDots = [];
+
+        this.lineToPointer;
+        this.lastDotPosition;
+
+        this.scene.input.on('pointermove', this.drawLineToPointer, this);
         scene.add.existing(this);
     }
 
     getDots()
     {
-        return this.connected_dots;
+        return this.uniqueDots;
     }
 
     addDot(dot, grid_positions)
     {
         this.connected_dots.push(dot);
+        this.lastDotPosition = grid_positions[dot.row][dot.column];
+
+        if(!this.uniqueDots.includes(dot))
+            this.uniqueDots.push(dot);
 
         if(this.connected_dots.length === 1)
-            this.color = dot.getData("color");
+            this.color = dot.color;
 
         if(this.connected_dots.length >= 2)
-            this.drawLine(grid_positions);
+            this.drawLineBetweenDots(grid_positions);
     }
 
     canDrawLineTo(dot){
@@ -37,26 +54,7 @@ class DotLine extends Phaser.GameObjects.GameObject{
 
     isDotNeighbor(dot, other) 
     {
-        const neighbor_deltas = [
-            {x : -1, y : -1},
-            {x : 0, y : -1},
-            {x : -1, y : 0},
-            {x : 1, y : 0},
-            {x : -1, y : 1},
-            {x : 0, y : 1},
-            {x : 1, y : -1},
-            {x : 1, y : 1},
-        ];
-        
-        var deltaY = other.getData('row') - dot.getData('row');
-        var deltaX = other.getData('column') - dot.getData('column');
-
-        for (var neighbor_delta of neighbor_deltas) {
-            if (deltaX === neighbor_delta.x && deltaY === neighbor_delta.y)
-                return true
-        }
-
-        return false
+        return HexGrid.isNeighbor(dot.row, dot.column, other.row, other.column);
     }
 
     getFirstDot()
@@ -86,32 +84,48 @@ class DotLine extends Phaser.GameObjects.GameObject{
 
     isMatchingColor(dot)
     {
-        return dot.getData('color') ===  dot_line.color;
+        return dot.color ===  this.color;
     }
 
-    drawLine(grid_positions)
+    drawLineToPointer(pointer)
     {
-        var line = this.scene.add.graphics();
+        // If object has been destroyed, do nothing
+        if(!this.scene) return;
+
+        // Destroy the previous line to the pointer
+        if(this.lineToPointer)
+            this.lineToPointer.destroy();
+
+        // Draw new line to the pointer
+        if(this.lastDotPosition){
+            var localPoint = this.getLocalPoint(pointer.x, pointer.y)
+            this.lineToPointer = this.drawLine(this.lastDotPosition, localPoint);
+        }
+    }
+
+    drawLineBetweenDots(grid_positions)
+    {
         var lastDot = this.connected_dots[this.connected_dots.length - 2];
         var newDot = this.connected_dots[this.connected_dots.length - 1];
-        var lastDotPos = grid_positions[lastDot.getData("row")][lastDot.getData("column")];
-        var newDotPos = grid_positions[newDot.getData("row")][newDot.getData("column")];
+        var lastDotPos = grid_positions[lastDot.row][lastDot.column];
+        var newDotPos = grid_positions[newDot.row][newDot.column];
 
-        line.lineStyle(2, this.color, 1);
-        line.moveTo(lastDotPos.x, lastDotPos.y);
-        line.lineTo(newDotPos.x, newDotPos.y);
+        this.drawLine(lastDotPos, newDotPos);
+    }
+
+    drawLine(pos1, pos2)
+    {
+        var line = this.scene.add.graphics();
+        line.lineStyle(this.lineWidth, this.color, 1);
+        line.moveTo(pos1.x, pos1.y);
+        line.lineTo(pos2.x, pos2.y);
 
         line.closePath();
         line.strokePath();
-        this.graphics.push(line)
+        
+        this.add(line);
+
+        return line;
     }
 
-    deleteLine()
-    {
-        this.connected_dots = [];
-        this.color = undefined;
-        for(var line of this.graphics) {
-            line.destroy();
-        }
-    }
 }
