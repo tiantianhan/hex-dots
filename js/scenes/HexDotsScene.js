@@ -52,10 +52,8 @@ class HexDotsScene extends Phaser.Scene
     create ()
     {
         GameUtilities.fadeInScene(this);
+        this.state = HexDotsScene.State.IDLE;
 
-        // this.add.image(400, 300, 'particle').setTint(0xff00ff);
-
-        // Set up game objects
         this.mainContainer = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
         
         this.grid = new HexGrid(this, this.numRows, this.numCols);
@@ -91,6 +89,9 @@ class HexDotsScene extends Phaser.Scene
 
     onGameComplete()
     {
+        if(this.dotLine)
+            this.dotLine.destroy();
+        this.state = HexDotsScene.State.IDLE;
         GameUtilities.fadeOutScene(this, 'endScene', {score: this.score.score, settings: this.gameSettings});
     }
 
@@ -185,10 +186,7 @@ class HexDotsScene extends Phaser.Scene
     
     onDotHover(dot)
     {
-        // console.log("Dot hover position r, c: " + dot.row, dot.column)
-
         if (this.state === HexDotsScene.State.CONNECT) {
-            // If color matches the line of connected dots, add to the line
             if( this.dotLine.canDrawLineTo(dot)) {
                 this.dotLine.addDot(dot, this.grid.positions);
                 dot.playDotConnectedEffects();
@@ -251,12 +249,15 @@ class HexDotsScene extends Phaser.Scene
         var shift = this.calculateShift(dotsToDelete);
 
         // Shift the dots, starting with the bottom row
-        for (var i = this.numRows - 1; i >= 0; i--){
-            for (var j = 0; j < this.numCols; j++){
-                var dot = this.dots[i][j];
+        for (var j = 0; j < this.numCols; j++){
+            // Add a small random delay for each column
+            var randomShiftDelay = this.getSmallRandomShiftDelay();
 
+            for (var i = this.numRows - 1; i >= 0; i--){
+            
+                var dot = this.dots[i][j];
                 if(shift[i][j]){
-                    this.shiftDot(dot, shift[i][j]);
+                    this.shiftDot(dot, shift[i][j], randomShiftDelay);
                 }
                 newDots[dot.row][dot.column] = dot;
             }
@@ -276,7 +277,8 @@ class HexDotsScene extends Phaser.Scene
                     // The closer the target position is to the top, the 
                     // longer we wait before we drop the dot
                     var dropDelayFactor = numSpawn[j] - s;
-                    var dropDelay = dropDelayFactor * dot.moveTime;
+                    var dropDelay = dropDelayFactor * Dot.moveTime;
+                    dropDelay += this.getSmallRandomShiftDelay();
 
                     // Dots spawned above first row has "initial row" of -1
                     dot.moveThroughPositions(this.getShiftPositions(-1, dot.column, s), dropDelay);
@@ -323,24 +325,20 @@ class HexDotsScene extends Phaser.Scene
 
             var i = 0;
             // Spawn dot for each deleted dot starting from the first row
-            try{
-                while(isNaN(shift[i][j])){
-                    i++;
-                    numSpawn[j] += 1;
-                }
-            } catch (error){
-                //TODO
-                console.log("Shift undefined error");
+            while(i < shift.length && isNaN(shift[i][j])){
+                i++;
+                numSpawn[j] += 1;
             }
 
             // Spawn as many dots as the dots below will shift
-            numSpawn[j] += shift[i][j];
+            if(i < shift.length)
+                numSpawn[j] += shift[i][j];
         }
         return numSpawn;
     }
 
-    shiftDot(dot, shift){
-        dot.moveThroughPositions(this.getShiftPositions(dot.row, dot.column, shift));
+    shiftDot(dot, shift, delay){
+        dot.moveThroughPositions(this.getShiftPositions(dot.row, dot.column, shift), delay);
         dot.row += shift;
     }
 
@@ -356,4 +354,9 @@ class HexDotsScene extends Phaser.Scene
         return positions;
     }
 
+    getSmallRandomShiftDelay()
+    {
+        // Between 0 - 40% of the time it take for dots to move one unit
+        return Math.random() * Dot.moveTime * 0.4;
+    }
 }

@@ -1,18 +1,18 @@
 class Dot extends Phaser.GameObjects.Container{
     static numColors;
+    static moveTime = 200; //Time it takes for dot to move one grid unit
 
     constructor (scene, x, y, color, children)
     {
         super(scene, x, y, children);
+        this.scene = scene;
 
         const dotSize = GameConstants.DOT.size;
         this.circle = new Phaser.GameObjects.Ellipse(scene, 0, 0, dotSize, dotSize, color);
         this.scene.add.existing(this.circle);
 
-        this.scene = scene;
         this.dotSize = dotSize;
         this.hitCircleSize = dotSize * 1.5;
-        this.moveTime = 200; //Time it takes for dot to move one grid unit
         this.color = color;
         this.row = undefined;
         this.column = undefined;
@@ -106,6 +106,7 @@ class Dot extends Phaser.GameObjects.Container{
     }
 
     moveThroughPositions(positions, delay){
+        // Create a chain of tweens that move the dot through the target positions
         var tweenChain = [];
         for(var i = 0; i < positions.length; i++) {
             var tween = this.getMoveTweenForPosition(positions[i]);
@@ -115,8 +116,9 @@ class Dot extends Phaser.GameObjects.Container{
         // First tween has the delay
         tweenChain[0].delay = delay;
 
+        // Last tween bounces
         tweenChain[tweenChain.length - 1].ease = 'Bounce';
-        tweenChain[tweenChain.length - 1].duration = this.moveTime * 1.5;
+        tweenChain[tweenChain.length - 1].duration = Dot.moveTime * 1.5;
 
         this.moveTween = this.scene.tweens.chain({
             targets: this,
@@ -129,14 +131,10 @@ class Dot extends Phaser.GameObjects.Container{
             x: position.x,
             y: position.y,
             delay: 0,
-            duration: this.moveTime, 
+            duration: Dot.moveTime, 
             ease: 'Quad',
             repeat: 0,
             yoyo: false,
         }   
-    }
-
-    customEase(t) {
-        return t; //* t;
     }
 }

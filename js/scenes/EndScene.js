@@ -34,7 +34,7 @@ class EndScene extends Phaser.Scene
         endRound.setOrigin(0.5);
 
         // Your score text
-        const yourScore = this.add.text(0, 25, "You have: " + this.score + " dots", {
+        const yourScore = this.add.text(0, 25, "You have: " + this.score + " dots!", {
             fill: GameConstants.TEXT.color,
         }).setOrigin(0.5);
 

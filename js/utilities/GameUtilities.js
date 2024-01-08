@@ -1,9 +1,11 @@
 /**
  * Helper functions
- * 
- * @class
  */
 class GameUtilities {
+    /**
+     * Fade out transition from this scene to the next scene with nextSceneId.
+     * Passes nextSceneData to the next scene.
+     */
     static fadeOutScene(scene, nextSceneId, nextSceneData) 
     {
         // Use camera for a white out scene transition
@@ -13,6 +15,9 @@ class GameUtilities {
         })
     }
 
+    /**
+     * Fade in this scene.
+     */
     static fadeInScene(scene) 
     {
         scene.cameras.main.fadeIn(200, 255, 255, 255)
@@ -22,7 +27,7 @@ class GameUtilities {
      * @param {int} rows 
      * @param {int} cols 
      * @param {*} initialValue 
-     * @returns rows x cols Array with all elements set to initialValue
+     * @returns rows x cols array with all elements set to initialValue
      */
     static initializeArray(rows, cols, initialValue) {
         var array = [];

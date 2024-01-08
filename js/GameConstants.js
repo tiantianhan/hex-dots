@@ -13,7 +13,7 @@ class GameConstants {
 
     static MARGINS = {
         top: 100,
-        left: 100,
+        left: 120,
     };
 
     static GRID = {
@@ -51,6 +51,6 @@ class GameConstants {
     }
 
     static TIMER = {
-        initialTime: 1000, // Seconds
+        initialTime: 3, // Seconds
     }
 }
