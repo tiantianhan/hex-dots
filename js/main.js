@@ -4,10 +4,6 @@ var config = {
     height: GameConstants.HEIGHT,
     backgroundColor: GameConstants.BACKGROUND.color,
     parent: 'game-container',
-    // scene: [SettingsScene, HexDotsScene],
-    // scene: [HexDotsScene],
-    // scene: [HexDotsScene, EndScene],
-    // scene: [EndScene, HexDotsScene],
     scene: [SettingsScene, HexDotsScene, EndScene],
 };
 

@@ -1,3 +1,6 @@
+/** 
+ * Data class for storing and passing the game settings.
+*/
 class GameSettings {
     constructor (numRows, numCols, numDotColors)
     {

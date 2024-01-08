@@ -1,3 +1,6 @@
+/**
+ * Overlay that flashes in the given color.
+ */
 class TintedOverlay extends Phaser.GameObjects.Container {
     constructor (scene, x, y, children) {
         super(scene, x, y, children);

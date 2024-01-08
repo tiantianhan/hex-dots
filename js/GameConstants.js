@@ -1,3 +1,6 @@
+/**
+ * Constants used throughout the game for easy adjustment.
+ */
 class GameConstants {
     static WIDTH = 800;
     static HEIGHT = 600;
@@ -51,6 +54,6 @@ class GameConstants {
     }
 
     static TIMER = {
-        initialTime: 3, // Seconds
+        initialTime: 40, // Seconds
     }
 }

@@ -9,7 +9,7 @@ class GameUtilities {
     static fadeOutScene(scene, nextSceneId, nextSceneData) 
     {
         // Use camera for a white out scene transition
-        scene.cameras.main.fadeOut(200, 255, 255, 255)
+        scene.cameras.main.fadeOut(150, 255, 255, 255)
         scene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, (cam, effect) => {
             scene.scene.start(nextSceneId, nextSceneData);
         })
@@ -20,7 +20,7 @@ class GameUtilities {
      */
     static fadeInScene(scene) 
     {
-        scene.cameras.main.fadeIn(200, 255, 255, 255)
+        scene.cameras.main.fadeIn(250, 255, 255, 255)
     }
 
     /**

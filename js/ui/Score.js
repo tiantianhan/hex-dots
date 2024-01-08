@@ -1,3 +1,6 @@
+/**
+ * Tracks and displays the current score.
+ */
 class Score extends Phaser.GameObjects.Container {
     constructor (scene, x, y, children) {
         super(scene, x, y, children);

@@ -16,6 +16,7 @@ class EndScene extends Phaser.Scene
 
     init(data)
     {
+        GameUtilities.fadeInScene(this);
         this.score = data.score || 0;
         this.settings = data.settings || new GameSettings();
     }

@@ -1,7 +1,8 @@
+/**
+ * Counts down from initial time in units of seconds.
+ */
 class CountdownTimer extends Phaser.GameObjects.Container {
-    /**
-     * Counts down from initial time in seconds
-     */
+
     constructor (scene, x, y, initialTime, children) {
         super(scene, x, y, children);
         this.scene = scene;

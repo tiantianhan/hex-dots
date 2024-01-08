@@ -22,10 +22,10 @@ class HexDotsScene extends Phaser.Scene
         this.mainContainer;
         this.grid;
         this.dotLine;
-        // Positions where dots spawn
-        this.spawnPositions;
         // Row number x column number array of dots
         this.dots;
+        // Positions where dots spawn
+        this.spawnPositions;
 
         this.overlay;
 
@@ -37,6 +37,7 @@ class HexDotsScene extends Phaser.Scene
 
     init(data)
     {
+        GameUtilities.fadeInScene(this);
         this.numRows = data.settings.numRows || GameConstants.GRID.numRowsDefault;
         this.numCols = data.settings.numCols || GameConstants.GRID.numColsDefault;
         Dot.numColors = data.settings.numColors || GameConstants.DOT.numColorsDefault;
@@ -51,7 +52,6 @@ class HexDotsScene extends Phaser.Scene
 
     create ()
     {
-        GameUtilities.fadeInScene(this);
         this.state = HexDotsScene.State.IDLE;
 
         this.mainContainer = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
@@ -92,6 +92,7 @@ class HexDotsScene extends Phaser.Scene
         if(this.dotLine)
             this.dotLine.destroy();
         this.state = HexDotsScene.State.IDLE;
+
         GameUtilities.fadeOutScene(this, 'endScene', {score: this.score.score, settings: this.gameSettings});
     }
 
@@ -356,7 +357,7 @@ class HexDotsScene extends Phaser.Scene
 
     getSmallRandomShiftDelay()
     {
-        // Between 0 - 40% of the time it take for dots to move one unit
-        return Math.random() * Dot.moveTime * 0.4;
+        // Between 0 - 60% of the time it take for dots to move one unit
+        return Math.random() * Dot.moveTime * 0.6;
     }
 }

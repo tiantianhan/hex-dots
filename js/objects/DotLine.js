@@ -1,7 +1,5 @@
 /**
- * Line that joins connected dots
- *
- * @class
+ * Line that joins connected dots.
  */
 class DotLine extends Phaser.GameObjects.Container{
     constructor (scene, x, y, children)

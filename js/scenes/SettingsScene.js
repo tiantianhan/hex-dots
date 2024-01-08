@@ -25,6 +25,10 @@ class SettingsScene extends Phaser.Scene
         this.swatches = [];
     }
 
+    init(data){
+        GameUtilities.fadeInScene(this);
+    }
+
     create()
     {
         this.mainContainer = this.add.container(GameConstants.MARGINS.left, GameConstants.MARGINS.top); 
