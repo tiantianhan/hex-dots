@@ -3,28 +3,35 @@
  */
 class GameConstants {
     static WIDTH = 800;
-    static HEIGHT = 600;
+    static HEIGHT = 700;
 
     static BACKGROUND = {
-        color: "#eeeeee",
+        color: 0xeeeeee,
+        colorDark: 0xdddddd,
     };
 
     static TEXT = {
         color: "#111111",
         colorHover: "#f46d43",
+        colorHighlight: "#f46d43",
+        colorDisable: "#cccccc",
     };
 
     static MARGINS = {
-        top: 100,
+        top: 150,
         left: 120,
+    };
+
+    static TOP_BAR = {
+        height: 50,
     };
 
     static GRID = {
         numRowsDefault: 6,
         numColsDefault: 7,
-        numRowsMin: 3,
+        numRowsMin: 2,
         numRowsMax: 6,
-        numColsMin: 3,
+        numColsMin: 2,
         numColsMax: 7,
         hexSize: 50,
         lineWidth: 2,
@@ -33,9 +40,10 @@ class GameConstants {
 
     static DOT = {
         numColorsDefault: 4,
-        numColorsMin: 4,
+        numColorsMin: 1,
         numColorsMax: 8,
-        size: 20,
+        size: 25,
+        particleScale: 5,
         // Must have at least numColorsMax possible colors
         possibleColors: [
             0xf46d43, 0xd8e594, 0x3288bd, 0x66c2a5, 0xfdae61, 0xd53e4f,
@@ -44,7 +52,7 @@ class GameConstants {
     };
 
     static DOT_LINE = {
-        lineWidth: 2,
+        lineWidth: 5,
     };
 
     static TIMER = {

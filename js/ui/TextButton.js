@@ -4,14 +4,36 @@ class TextButton extends Phaser.GameObjects.Text {
 
         this.scene = scene;
         this.setInteractive();
+        this.enabled = true;
+        this.pointerOver = false;
 
         // Tint when hovered over
         this.on("pointerover", () => {
-            this.setFill(GameConstants.TEXT.colorHover);
+            this.pointerOver = true;
+            this.updateColor();
         });
 
         this.on("pointerout", () => {
-            this.setFill(GameConstants.TEXT.color);
+            this.pointerOver = false;
+            this.updateColor();
         });
+    }
+
+    setEnabled(enable) {
+        this.enabled = enable;
+
+        this.updateColor();
+    }
+
+    updateColor() {
+        if (this.enabled) {
+            if (this.pointerOver) {
+                this.setFill(GameConstants.TEXT.colorHover);
+            } else {
+                this.setFill(GameConstants.TEXT.color);
+            }
+        } else {
+            this.setFill(GameConstants.TEXT.colorDisable);
+        }
     }
 }

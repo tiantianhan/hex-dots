@@ -62,7 +62,7 @@ class DotLine extends Phaser.GameObjects.Container {
         return this.connectedDots[this.connectedDots.length - 1];
     }
 
-    isLine() {
+    hasConnections() {
         return this.connectedDots.length > 1;
     }
 

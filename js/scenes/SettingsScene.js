@@ -34,91 +34,86 @@ class SettingsScene extends Phaser.Scene {
         );
         this.updateGrid();
 
+        // Constants for positioning
         const buttonsPosY =
             GameConstants.HEIGHT - GameConstants.MARGINS.top - 40;
+        const horizontalSpace = GameConstants.WIDTH / 10;
 
         // Start button
-        this.startButton = new TextButton(this, 0, buttonsPosY, "Start");
+        this.startButton = new TextButton(
+            this,
+            -horizontalSpace * 0.5,
+            buttonsPosY,
+            "Start"
+        );
         this.mainContainer.add(this.startButton);
+        this.startButton.on("pointerup", this.startMainScene, this);
 
         // Row - + buttons
-        const rowText = this.add.text(100, buttonsPosY, "Rows:", {
-            fill: GameConstants.TEXT.color,
-        });
-        this.minusRowButton = new TextButton(this, 155, buttonsPosY, "-");
-        this.addRowButton = new TextButton(this, 190, buttonsPosY, "+");
-        this.mainContainer.add([
-            rowText,
-            this.addRowButton,
-            this.minusRowButton,
-        ]);
+        var rowPlusMinus = new PlusMinusButton(
+            this,
+            horizontalSpace,
+            buttonsPosY,
+            "Rows:",
+            this.numRows,
+            GameConstants.GRID.numRowsMin,
+            GameConstants.GRID.numRowsMax
+        );
+        rowPlusMinus.clickEmitter.addListener(
+            "click",
+            (value) => {
+                this.numRows = value;
+                this.updateGrid();
+            },
+            this
+        );
 
         // Column - + buttons
-        const columnText = this.add.text(250, buttonsPosY, "Columns:", {
-            fill: GameConstants.TEXT.color,
-        });
-        this.minusColumnButton = new TextButton(this, 335, buttonsPosY, "-");
-        this.addColumnButton = new TextButton(this, 370, buttonsPosY, "+");
-        this.mainContainer.add([
-            columnText,
-            this.addColumnButton,
-            this.minusColumnButton,
-        ]);
+        var columnPlusMinus = new PlusMinusButton(
+            this,
+            horizontalSpace * 3,
+            buttonsPosY,
+            "Columns:",
+            this.numCols,
+            GameConstants.GRID.numColsMin,
+            GameConstants.GRID.numColsMax
+        );
+        columnPlusMinus.clickEmitter.addListener(
+            "click",
+            (value) => {
+                this.numCols = value;
+                this.updateGrid();
+            },
+            this
+        );
 
         // Color - + buttons
-        const colorText = this.add.text(480, buttonsPosY, "Colors:", {
-            fill: GameConstants.TEXT.color,
-        });
-        this.minusColorButton = new TextButton(this, 565, buttonsPosY, "-");
-        this.addColorButton = new TextButton(this, 600, buttonsPosY, "+");
-        this.mainContainer.add([
-            colorText,
-            this.addColorButton,
-            this.minusColorButton,
-        ]);
-
-        // Color swatches
-        this.swatchContainer = this.add.container(450, buttonsPosY - 15);
-        this.mainContainer.add(this.swatchContainer);
-        this.updateColorSwatches();
-
-        this.handleInputs();
-    }
-
-    handleInputs() {
-        this.input.on(
-            "gameobjectdown",
-            function (pointer, gameObject) {
-                switch (gameObject) {
-                    case this.addRowButton:
-                        this.numRows++;
-                        break;
-                    case this.minusRowButton:
-                        this.numRows--;
-                        break;
-                    case this.addColumnButton:
-                        this.numCols++;
-                        break;
-                    case this.minusColumnButton:
-                        this.numCols--;
-                        break;
-                    case this.addColorButton:
-                        this.numColors++;
-                        break;
-                    case this.minusColorButton:
-                        this.numColors--;
-                        break;
-                    case this.startButton:
-                        this.startMainScene();
-                        break;
-                }
-
-                this.clampValues();
-                this.updateGrid();
+        var colorPlusMinus = new PlusMinusButton(
+            this,
+            horizontalSpace * 5.5,
+            buttonsPosY,
+            "Colors:",
+            this.numColors,
+            GameConstants.DOT.numColorsMin,
+            GameConstants.DOT.numColorsMax
+        );
+        colorPlusMinus.clickEmitter.addListener(
+            "click",
+            (value) => {
+                this.numColors = value;
                 this.updateColorSwatches();
             },
             this
         );
+        this.mainContainer.add([rowPlusMinus, columnPlusMinus, colorPlusMinus]);
+
+        // Color swatches
+        this.swatchContainer = this.add.container(
+            horizontalSpace * 5.5,
+            buttonsPosY - 15
+        );
+        this.mainContainer.add(this.swatchContainer);
+        this.updateColorSwatches();
     }
 
     startMainScene() {
@@ -130,24 +125,6 @@ class SettingsScene extends Phaser.Scene {
         GameUtilities.fadeOutScene(this, "hexDotsScene", {
             settings: settings,
         });
-    }
-
-    clampValues() {
-        this.numRows = GameUtilities.clamp(
-            this.numRows,
-            GameConstants.GRID.numRowsMin,
-            GameConstants.GRID.numRowsMax
-        );
-        this.numCols = GameUtilities.clamp(
-            this.numCols,
-            GameConstants.GRID.numColsMin,
-            GameConstants.GRID.numColsMax
-        );
-        this.numColors = GameUtilities.clamp(
-            this.numColors,
-            GameConstants.DOT.numColorsMin,
-            GameConstants.DOT.numColorsMax
-        );
     }
 
     updateGrid() {

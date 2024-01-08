@@ -2,12 +2,14 @@
  * Overlay that flashes in the given color.
  */
 class TintedOverlay extends Phaser.GameObjects.Container {
-    constructor(scene, x, y, children) {
+    constructor(scene, x, y, width, height, children) {
         super(scene, x, y, children);
 
         this.scene = scene;
         this.color = 0x000000;
         this.peakOpacity = 0.5;
+        this.width = width;
+        this.height = height;
 
         this.alphaTween;
     }
@@ -15,12 +17,7 @@ class TintedOverlay extends Phaser.GameObjects.Container {
     createOverlay(color) {
         this.overlay = this.scene.add.graphics();
         this.overlay.fillStyle(color, 1);
-        this.overlay.fillRect(
-            0,
-            0,
-            this.scene.game.config.width,
-            this.scene.game.config.height
-        );
+        this.overlay.fillRect(0, 0, this.width, this.height);
         // Set interactive to avoid blocking inputs
         this.overlay.setInteractive();
         this.add(this.overlay);

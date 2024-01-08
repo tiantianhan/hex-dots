@@ -102,11 +102,11 @@ class Dot extends Phaser.GameObjects.Container {
 
     emitParticle() {
         this.emitter = this.scene.add.particles(0, 0, "particle", {
-            scale: { start: 1, end: 3 },
+            scale: { start: 1, end: GameConstants.DOT.particleScale },
             speed: { min: 0, max: 0 },
             lifespan: 200,
             tint: this.color,
-            alpha: { start: 0.5, end: 0 },
+            alpha: { start: 0.7, end: 0 },
             emitting: false,
         });
         this.add(this.emitter);

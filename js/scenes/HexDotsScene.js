@@ -25,8 +25,6 @@ class HexDotsScene extends Phaser.Scene {
         // Positions where dots spawn
         this.spawnPositions;
 
-        this.overlay;
-
         // Container for UI elements
         this.uiContainer;
 
@@ -67,8 +65,14 @@ class HexDotsScene extends Phaser.Scene {
 
         this.add.existing(this.mainContainer);
 
-        this.overlay = new TintedOverlay(this, 0, 0);
-        this.add.existing(this.overlay);
+        this.border = new ProgressBorder(
+            this,
+            0,
+            GameConstants.TOP_BAR.height,
+            GameConstants.WIDTH,
+            GameConstants.HEIGHT - GameConstants.TOP_BAR.height
+        );
+        this.add.existing(this.border);
 
         this.initializeUI();
 
@@ -86,7 +90,6 @@ class HexDotsScene extends Phaser.Scene {
     }
 
     onGameComplete() {
-        //
         if (this.dotLine) this.dotLine.destroy();
         this.state = HexDotsScene.State.IDLE;
 
@@ -97,6 +100,17 @@ class HexDotsScene extends Phaser.Scene {
     }
 
     initializeUI() {
+        const uiBackground = new Phaser.GameObjects.Rectangle(
+            this,
+            0,
+            0,
+            GameConstants.WIDTH,
+            GameConstants.TOP_BAR.height,
+            GameConstants.BACKGROUND.colorDark,
+            1
+        ).setOrigin(0);
+        this.add.existing(uiBackground);
+
         this.uiContainer = this.add.container(10, 10);
         this.score = new Score(this, 0, 0);
         this.timer = new CountdownTimer(
@@ -179,6 +193,7 @@ class HexDotsScene extends Phaser.Scene {
             this.dotLine.addDot(dot, this.grid.positions);
 
             dot.playDotConnectedEffects();
+            this.border.setColor(dot.color);
 
             this.state = HexDotsScene.State.CONNECT;
         }
@@ -191,8 +206,11 @@ class HexDotsScene extends Phaser.Scene {
                 dot.playDotConnectedEffects();
 
                 if (this.dotLine.isLoop()) {
+                    // Do not wait for user to release pointer if user has made a loop
                     this.reposition();
                     this.state = HexDotsScene.State.IDLE;
+                } else {
+                    this.updateBorder();
                 }
             }
         }
@@ -205,16 +223,26 @@ class HexDotsScene extends Phaser.Scene {
         }
     }
 
+    updateBorder() {
+        var progress =
+            this.dotLine.getDots().length /
+            Math.max(this.numCols, this.numRows);
+        this.border.setProgress(progress);
+    }
+
     reposition() {
         this.state = HexDotsScene.State.REPOSITION;
 
-        if (this.dotLine.isLine()) {
+        if (this.dotLine.hasConnections()) {
             var dotsToDelete = this.getDotsToDelete();
             this.score.addScore(dotsToDelete.length);
             this.repositionDots(dotsToDelete);
 
-            if (this.dotLine.isLoop())
-                this.overlay.flashOverlay(this.dotLine.color);
+            if (this.dotLine.isLoop()) {
+                this.border.showFullSquare(this.dotLine.color);
+            } else {
+                this.border.clearProgress();
+            }
         }
 
         this.dotLine.destroy();
