@@ -1,9 +1,8 @@
 /**
  * Line that joins connected dots.
  */
-class DotLine extends Phaser.GameObjects.Container{
-    constructor (scene, x, y, children)
-    {
+class DotLine extends Phaser.GameObjects.Container {
+    constructor(scene, x, y, children) {
         super(scene, x, y, children);
 
         this.scene = scene;
@@ -16,95 +15,89 @@ class DotLine extends Phaser.GameObjects.Container{
         this.lineToPointer;
         this.lastDotPosition;
 
-        this.scene.input.on('pointermove', this.drawLineToPointer, this);
+        this.scene.input.on("pointermove", this.drawLineToPointer, this);
         scene.add.existing(this);
     }
 
-    getDots()
-    {
+    getDots() {
         return this.uniqueDots;
     }
 
-    addDot(dot, gridPositions)
-    {
+    addDot(dot, gridPositions) {
         this.connectedDots.push(dot);
         this.lastDotPosition = gridPositions[dot.row][dot.column];
 
-        if(!this.uniqueDots.includes(dot))
-            this.uniqueDots.push(dot);
+        if (!this.uniqueDots.includes(dot)) this.uniqueDots.push(dot);
 
-        if(this.connectedDots.length === 1)
-            this.color = dot.color;
+        if (this.connectedDots.length === 1) this.color = dot.color;
 
-        if(this.connectedDots.length >= 2)
+        if (this.connectedDots.length >= 2)
             this.drawLineBetweenDots(gridPositions);
     }
 
-    canDrawLineTo(dot){
-        if (this.connectedDots.length === 0){
+    canDrawLineTo(dot) {
+        if (this.connectedDots.length === 0) {
             return false;
-        }  else {
-            return (this.isFirstDot(dot) || !this.connectedDots.includes(dot)) && 
-            this.isMatchingColor(dot) &&
-            this.isDotNeighbor(dot, this.connectedDots[this.connectedDots.length - 1]);
+        } else {
+            return (
+                (this.isFirstDot(dot) || !this.connectedDots.includes(dot)) &&
+                this.isMatchingColor(dot) &&
+                this.isDotNeighbor(
+                    dot,
+                    this.connectedDots[this.connectedDots.length - 1]
+                )
+            );
         }
     }
 
-    isDotNeighbor(dot, other) 
-    {
+    isDotNeighbor(dot, other) {
         return HexGrid.isNeighbor(dot.row, dot.column, other.row, other.column);
     }
 
-    getFirstDot()
-    {
+    getFirstDot() {
         return this.connectedDots[0];
     }
 
-    getLastDot()
-    {
+    getLastDot() {
         return this.connectedDots[this.connectedDots.length - 1];
     }
 
-    isLine()
-    {
+    isLine() {
         return this.connectedDots.length > 1;
     }
 
-    isLoop()
-    {
+    isLoop() {
         return this.getFirstDot() === this.getLastDot();
     }
 
-    isFirstDot(dot)
-    {
+    isFirstDot(dot) {
         return this.getFirstDot() === dot;
     }
 
-    isMatchingColor(dot)
-    {
-        return dot.color ===  this.color;
+    isMatchingColor(dot) {
+        return dot.color === this.color;
     }
 
-    drawLineToPointer(pointer)
-    {
+    drawLineToPointer(pointer) {
         // If object has been destroyed, do nothing
-        if(!this.scene) return;
+        if (!this.scene) return;
 
         // Destroy the previous line to the pointer
-        if(this.lineToPointer)
-            this.lineToPointer.destroy();
+        if (this.lineToPointer) this.lineToPointer.destroy();
 
         // Draw new line to the pointer
-        if(this.lastDotPosition){
-            var localPoint = this.getLocalPoint(pointer.x, pointer.y)
-            this.lineToPointer = this.drawLine(this.lastDotPosition, localPoint);
+        if (this.lastDotPosition) {
+            var localPoint = this.getLocalPoint(pointer.x, pointer.y);
+            this.lineToPointer = this.drawLine(
+                this.lastDotPosition,
+                localPoint
+            );
         }
     }
 
-    drawLineBetweenDots(gridPositions)
-    {
+    drawLineBetweenDots(gridPositions) {
         // If object has been destroyed, do nothing
-        if(!this.scene) return;
+        if (!this.scene) return;
 
         var lastDot = this.connectedDots[this.connectedDots.length - 2];
         var newDot = this.connectedDots[this.connectedDots.length - 1];
@@ -114,8 +107,7 @@ class DotLine extends Phaser.GameObjects.Container{
         this.drawLine(lastDotPos, newDotPos);
     }
 
-    drawLine(pos1, pos2)
-    {
+    drawLine(pos1, pos2) {
         var line = this.scene.add.graphics();
         line.lineStyle(this.lineWidth, this.color, 1);
         line.moveTo(pos1.x, pos1.y);
@@ -123,10 +115,9 @@ class DotLine extends Phaser.GameObjects.Container{
 
         line.closePath();
         line.strokePath();
-        
+
         this.add(line);
 
         return line;
     }
-
 }

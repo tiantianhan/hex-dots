@@ -3,7 +3,7 @@ var config = {
     width: GameConstants.WIDTH,
     height: GameConstants.HEIGHT,
     backgroundColor: GameConstants.BACKGROUND.color,
-    parent: 'game-container',
+    parent: "game-container",
     scene: [SettingsScene, HexDotsScene, EndScene],
 };
 

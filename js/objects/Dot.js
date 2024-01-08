@@ -1,14 +1,26 @@
-class Dot extends Phaser.GameObjects.Container{
+class Dot extends Phaser.GameObjects.Container {
+    /**
+     * Number of possible colors for dots
+     */
     static numColors;
-    static moveTime = 200; //Time it takes for dot to move one grid unit
+    /**
+     * Time in ms for dot to move one grid unit
+     */
+    static moveTime = 200;
 
-    constructor (scene, x, y, color, children)
-    {
+    constructor(scene, x, y, color, children) {
         super(scene, x, y, children);
         this.scene = scene;
 
         const dotSize = GameConstants.DOT.size;
-        this.circle = new Phaser.GameObjects.Ellipse(scene, 0, 0, dotSize, dotSize, color);
+        this.circle = new Phaser.GameObjects.Ellipse(
+            scene,
+            0,
+            0,
+            dotSize,
+            dotSize,
+            color
+        );
         this.scene.add.existing(this.circle);
 
         this.dotSize = dotSize;
@@ -23,43 +35,48 @@ class Dot extends Phaser.GameObjects.Container{
         this.setUpConnectedAnimation();
         this.setUpDestroyAnimation();
 
-        this.setInteractive(new Phaser.Geom.Ellipse(0, 0, this.hitCircleSize, this.hitCircleSize), Phaser.Geom.Ellipse.Contains);
-        
+        this.setInteractive(
+            new Phaser.Geom.Ellipse(
+                0,
+                0,
+                this.hitCircleSize,
+                this.hitCircleSize
+            ),
+            Phaser.Geom.Ellipse.Contains
+        );
+
         this.scene.add.existing(this);
         this.add(this.circle);
     }
 
     /**
-   * Get a random dot color from one of numColors different colors
-   * @static
-   */
-    static getRandomDotColor()
-    {    
+     * Get a random dot color from one of numColors different colors
+     * @static
+     */
+    static getRandomDotColor() {
         // Random integer within interval [0, numColors)
         var randomIndex = Math.floor(Math.random() * this.numColors);
         return GameConstants.DOT.possibleColors[randomIndex];
     }
 
-    update() {
+    update() {}
 
-    }
-
-    setUpConnectedAnimation(){
+    setUpConnectedAnimation() {
         this.connectedTween = this.scene.tweens.add({
             targets: this.circle,
             scaleX: 1.2,
             scaleY: 1.2,
             duration: 170,
             paused: true,
-            ease: 'Power2.easeIn',
-            easeOut: 'Power4.easeIn',
+            ease: "Power2.easeIn",
+            easeOut: "Power4.easeIn",
             easeParams: [2],
             yoyo: true,
-            repeat: 0
+            repeat: 0,
         });
     }
 
-    setUpDestroyAnimation(){
+    setUpDestroyAnimation() {
         this.destroyTween = this.scene.tweens.add({
             targets: this.circle,
             scaleX: 0,
@@ -70,45 +87,41 @@ class Dot extends Phaser.GameObjects.Container{
             onComplete: () => {
                 this.destroyTween = undefined;
                 this.destroy();
-            }
+            },
         });
     }
 
-    playDotConnectedEffects()
-    {
+    playDotConnectedEffects() {
         // The connected animation should not interfere with the destroy animation
-        if(!this.destroyTween.isPlaying()){
+        if (!this.destroyTween.isPlaying()) {
             this.setUpConnectedAnimation();
             this.connectedTween.play();
             this.emitParticle();
         }
-            
     }
 
-    emitParticle()
-    {
-        this.emitter = this.scene.add.particles(0, 0, 'particle', {
+    emitParticle() {
+        this.emitter = this.scene.add.particles(0, 0, "particle", {
             scale: { start: 1, end: 3 },
             speed: { min: 0, max: 0 },
             lifespan: 200,
-            tint:this.color,
-            alpha: {start: 0.5, end: 0},
+            tint: this.color,
+            alpha: { start: 0.5, end: 0 },
             emitting: false,
         });
         this.add(this.emitter);
         this.emitter.emitParticleAt(0, 0);
     }
 
-    destroyWithEffects()
-    {
+    destroyWithEffects() {
         this.connectedTween.stop();
         this.destroyTween.play();
     }
 
-    moveThroughPositions(positions, delay){
+    moveThroughPositions(positions, delay) {
         // Create a chain of tweens that move the dot through the target positions
         var tweenChain = [];
-        for(var i = 0; i < positions.length; i++) {
+        for (var i = 0; i < positions.length; i++) {
             var tween = this.getMoveTweenForPosition(positions[i]);
             tweenChain.push(tween);
         }
@@ -117,7 +130,7 @@ class Dot extends Phaser.GameObjects.Container{
         tweenChain[0].delay = delay;
 
         // Last tween bounces
-        tweenChain[tweenChain.length - 1].ease = 'Bounce';
+        tweenChain[tweenChain.length - 1].ease = "Bounce";
         tweenChain[tweenChain.length - 1].duration = Dot.moveTime * 1.5;
 
         this.moveTween = this.scene.tweens.chain({
@@ -131,10 +144,10 @@ class Dot extends Phaser.GameObjects.Container{
             x: position.x,
             y: position.y,
             delay: 0,
-            duration: Dot.moveTime, 
-            ease: 'Quad',
+            duration: Dot.moveTime,
+            ease: "Quad",
             repeat: 0,
             yoyo: false,
-        }   
+        };
     }
 }
