@@ -40,12 +40,10 @@ class DotLine extends Phaser.GameObjects.Container {
             return false;
         } else {
             return (
+                // Can only draw to a dot already connected if it's the first dot, to form a loop
                 (this.isFirstDot(dot) || !this.connectedDots.includes(dot)) &&
                 this.isMatchingColor(dot) &&
-                this.isDotNeighbor(
-                    dot,
-                    this.connectedDots[this.connectedDots.length - 1]
-                )
+                this.isDotNeighbor(dot, this.getLastDot())
             );
         }
     }
@@ -113,7 +111,6 @@ class DotLine extends Phaser.GameObjects.Container {
         line.moveTo(pos1.x, pos1.y);
         line.lineTo(pos2.x, pos2.y);
 
-        line.closePath();
         line.strokePath();
 
         this.add(line);

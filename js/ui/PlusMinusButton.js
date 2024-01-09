@@ -1,3 +1,6 @@
+/**
+ * A pair of labeled "-" and "+" text buttons that controls a value.
+ */
 class PlusMinusButton extends Phaser.GameObjects.Container {
     constructor(
         scene,
@@ -19,6 +22,8 @@ class PlusMinusButton extends Phaser.GameObjects.Container {
 
         const labelText = this.scene.add.text(0, 0, label, {
             fill: GameConstants.TEXT.color,
+            fontFamily: GameConstants.TEXT.fontFamily,
+            fontSize: GameConstants.TEXT.fontSize,
         });
         this.minusButton = new TextButton(
             this.scene,
@@ -26,12 +31,14 @@ class PlusMinusButton extends Phaser.GameObjects.Container {
             0,
             "-"
         );
+        this.minusButton.setFontFamily("courier");
         this.addButton = new TextButton(
             this.scene,
             labelText.width + this.minusButton.width + 40,
             0,
             "+"
         );
+        this.addButton.setFontFamily("courier");
         this.add([labelText, this.minusButton, this.addButton]);
         this.scene.add.existing(this);
 
@@ -42,14 +49,14 @@ class PlusMinusButton extends Phaser.GameObjects.Container {
     }
 
     handleButtonClicks() {
-        this.addButton.on("pointerdown", () => {
+        this.addButton.on("pointerup", () => {
             this.value++;
 
             this.clampAndCheckEnabled();
             this.clickEmitter.emit("click", this.value);
         });
 
-        this.minusButton.on("pointerdown", () => {
+        this.minusButton.on("pointerup", () => {
             this.value--;
 
             this.clampAndCheckEnabled();

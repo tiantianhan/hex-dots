@@ -18,8 +18,6 @@ class TintedOverlay extends Phaser.GameObjects.Container {
         this.overlay = this.scene.add.graphics();
         this.overlay.fillStyle(color, 1);
         this.overlay.fillRect(0, 0, this.width, this.height);
-        // Set interactive to avoid blocking inputs
-        this.overlay.setInteractive();
         this.add(this.overlay);
     }
 

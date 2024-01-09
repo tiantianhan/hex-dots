@@ -24,24 +24,41 @@ class EndScene extends Phaser.Scene {
         var centerY = this.cameras.main.displayHeight / 2;
         this.mainContainer.setPosition(centerX, centerY - 100);
 
+        const spacing = GameConstants.TEXT.fontSize * 2;
+
         // END OF ROUND title
         const endRound = this.add.text(0, 0, "END OF ROUND", {
             fill: GameConstants.TEXT.color,
+            fontFamily: GameConstants.TEXT.fontFamily,
+            fontSize: GameConstants.TEXT.fontSize,
         });
         endRound.setOrigin(0.5);
 
         // Your score text
         const yourScore = this.add
-            .text(0, 25, "You have: " + this.score + " dots!", {
+            .text(0, spacing, "Your score: " + this.score + " dots!", {
                 fill: GameConstants.TEXT.color,
+                fontFamily: GameConstants.TEXT.fontFamily,
+                fontSize: GameConstants.TEXT.fontSize,
             })
             .setOrigin(0.5);
 
         // Buttons
-        this.restartButton = new TextButton(this, 0, 100, "Restart").setOrigin(
-            0.5
-        );
-        this.exitButton = new TextButton(this, 0, 125, "Exit").setOrigin(0.5);
+        this.restartButton = new TextButton(
+            this,
+            0,
+            spacing * 4,
+            "Restart"
+        ).setOrigin(0.5);
+        this.restartButton.on("pointerup", this.restart, this);
+
+        this.exitButton = new TextButton(
+            this,
+            0,
+            spacing * 5,
+            "Exit"
+        ).setOrigin(0.5);
+        this.exitButton.on("pointerup", this.exitToSettings, this);
 
         this.mainContainer.add([
             endRound,
@@ -49,25 +66,6 @@ class EndScene extends Phaser.Scene {
             this.restartButton,
             this.exitButton,
         ]);
-
-        this.handleInputs();
-    }
-
-    handleInputs() {
-        this.input.on(
-            "gameobjectdown",
-            function (pointer, gameObject) {
-                switch (gameObject) {
-                    case this.restartButton:
-                        this.restart();
-                        break;
-                    case this.exitButton:
-                        this.exitToSettings();
-                        break;
-                }
-            },
-            this
-        );
     }
 
     restart() {

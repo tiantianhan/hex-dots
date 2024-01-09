@@ -1,24 +1,30 @@
 /**
  * Counts down from initial time in units of seconds.
  */
-class CountdownTimer extends Phaser.GameObjects.Container {
+class CountdownTimer extends BarElement {
     constructor(scene, x, y, initialTime, children) {
         super(scene, x, y, children);
         this.scene = scene;
 
+        this.warningTime = 3;
         this.initialTime = initialTime;
         this.timeRemaining = initialTime;
 
-        const smallSpace = 10;
-        const timerText = this.scene.add.text(0, 0, "Timer: ", {
-            fill: GameConstants.TEXT.color,
-        });
-        this.timeDisplay = this.scene.add.text(
-            timerText.width + smallSpace,
-            0,
-            initialTime.toString(),
-            { fill: GameConstants.TEXT.color }
-        );
+        const smallSpace = GameConstants.TOP_BAR.smallFontSize;
+        const timerText = this.scene.add
+            .text(0, 0, "Time:", {
+                fill: GameConstants.TEXT.color,
+                fontFamily: GameConstants.TEXT.fontFamily,
+                fontSize: GameConstants.TOP_BAR.smallFontSize,
+            })
+            .setOrigin(0, 0.5);
+        this.timeDisplay = this.scene.add
+            .text(timerText.width + smallSpace, 0, initialTime.toString(), {
+                fill: GameConstants.TEXT.color,
+                fontFamily: GameConstants.TEXT.fontFamily,
+                fontSize: GameConstants.TOP_BAR.largeFontSize,
+            })
+            .setOrigin(0, 0.5);
         this.add([timerText, this.timeDisplay]);
 
         // Set a timer to tick every second
@@ -30,6 +36,9 @@ class CountdownTimer extends Phaser.GameObjects.Container {
         });
 
         this.eventEmitter = new Phaser.Events.EventEmitter();
+
+        this.width = timerText.width + smallSpace + this.timeDisplay.width;
+        this.height = this.timeDisplay.height;
     }
 
     onTimerEvent() {
@@ -38,8 +47,8 @@ class CountdownTimer extends Phaser.GameObjects.Container {
 
         this.updateTimeDisplay();
 
-        if (this.timeRemaining <= 3) {
-            this.timeDisplay.setColor(GameConstants.TEXT.colorHover);
+        if (this.timeRemaining <= this.warningTime) {
+            this.timeDisplay.setColor(GameConstants.TEXT.colorHighlight);
         }
 
         // Countdown complete
@@ -52,5 +61,13 @@ class CountdownTimer extends Phaser.GameObjects.Container {
 
     updateTimeDisplay() {
         this.timeDisplay.text = this.timeRemaining;
+    }
+
+    getWidth() {
+        return this.width;
+    }
+
+    getHeight() {
+        return this.height;
     }
 }

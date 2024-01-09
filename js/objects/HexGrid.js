@@ -105,12 +105,10 @@ class HexGrid extends Phaser.GameObjects.Container {
         var points = [];
         for (var i = 0; i < 6; i++) {
             var angle = Phaser.Math.DegToRad(60 * i + 30);
-            points.push(
-                new Phaser.Geom.Point(
-                    x + size * Math.cos(angle),
-                    y + size * Math.sin(angle)
-                )
-            );
+            points.push({
+                x: x + size * Math.cos(angle),
+                y: y + size * Math.sin(angle),
+            });
         }
 
         graphics.beginPath();

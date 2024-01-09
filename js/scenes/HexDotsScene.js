@@ -82,10 +82,8 @@ class HexDotsScene extends Phaser.Scene {
     update() {}
 
     handleInputEvents() {
-        this.input.on("pointerup", (pointer) => {
-            if (pointer.leftButtonReleased()) {
-                this.onLeftClickReleased();
-            }
+        this.input.on("pointerup", () => {
+            this.onClickReleased();
         });
     }
 
@@ -100,27 +98,26 @@ class HexDotsScene extends Phaser.Scene {
     }
 
     initializeUI() {
-        const uiBackground = new Phaser.GameObjects.Rectangle(
+        const infoBar = new HorizontalBar(
             this,
             0,
             0,
             GameConstants.WIDTH,
-            GameConstants.TOP_BAR.height,
-            GameConstants.BACKGROUND.colorDark,
-            1
-        ).setOrigin(0);
-        this.add.existing(uiBackground);
+            GameConstants.TOP_BAR.height
+        );
+        this.add.existing(infoBar);
 
-        this.uiContainer = this.add.container(10, 10);
-        this.score = new Score(this, 0, 0);
         this.timer = new CountdownTimer(
             this,
-            GameConstants.WIDTH * 0.5,
+            0,
             0,
             GameConstants.TIMER.initialTime
         );
         this.timer.eventEmitter.on("timerComplete", this.onGameComplete, this);
-        this.uiContainer.add([this.score, this.timer]);
+
+        this.score = new Score(this, 0, 0);
+
+        infoBar.add([this.timer, this.score]);
     }
 
     initializeDots(mainContainer) {
@@ -216,7 +213,7 @@ class HexDotsScene extends Phaser.Scene {
         }
     }
 
-    onLeftClickReleased() {
+    onClickReleased() {
         if (this.state === HexDotsScene.State.CONNECT) {
             this.reposition();
             this.state = HexDotsScene.State.IDLE;

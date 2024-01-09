@@ -27,6 +27,8 @@ class SettingsScene extends Phaser.Scene {
         GameUtilities.fadeInScene(this);
     }
 
+    preload() {}
+
     create() {
         this.mainContainer = this.add.container(
             GameConstants.MARGINS.left,
@@ -34,9 +36,35 @@ class SettingsScene extends Phaser.Scene {
         );
         this.updateGrid();
 
+        this.fontLoaded = false;
+        // Initialize UI after webfont has loaded
+        WebFont.load({
+            google: {
+                families: ["Montserrat"],
+            },
+            active: () => {
+                this.fontLoaded = true;
+                this.initializeButtons();
+            },
+        });
+
+        // If font fails to load after a 2 second timeout, initialize anyway
+        setTimeout(() => {
+            if (!this.fontLoaded) {
+                console.warn(
+                    "Font loading took too long, initializing without webfont."
+                );
+                this.initializeButtons();
+            }
+        }, 2000);
+    }
+
+    initializeButtons() {
         // Constants for positioning
         const buttonsPosY =
-            GameConstants.HEIGHT - GameConstants.MARGINS.top - 40;
+            GameConstants.HEIGHT -
+            GameConstants.MARGINS.top -
+            GameConstants.TEXT.fontSize * 3;
         const horizontalSpace = GameConstants.WIDTH / 10;
 
         // Start button
@@ -109,8 +137,8 @@ class SettingsScene extends Phaser.Scene {
 
         // Color swatches
         this.swatchContainer = this.add.container(
-            horizontalSpace * 5.5,
-            buttonsPosY - 15
+            horizontalSpace * 4.5,
+            buttonsPosY - GameConstants.DOT.size
         );
         this.mainContainer.add(this.swatchContainer);
         this.updateColorSwatches();

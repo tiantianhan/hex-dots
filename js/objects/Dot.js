@@ -62,17 +62,23 @@ class Dot extends Phaser.GameObjects.Container {
     update() {}
 
     setUpConnectedAnimation() {
-        this.connectedTween = this.scene.tweens.add({
+        this.connectedTween = this.scene.tweens.chain({
             targets: this.circle,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 170,
             paused: true,
-            ease: "Power2.easeIn",
-            easeOut: "Power4.easeIn",
-            easeParams: [2],
-            yoyo: true,
-            repeat: 0,
+            tweens: [
+                {
+                    scaleX: 1.2,
+                    scaleY: 1.2,
+                    duration: 80,
+                    ease: "Quad",
+                },
+                {
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 80,
+                    ease: "Quad",
+                },
+            ],
         });
     }
 

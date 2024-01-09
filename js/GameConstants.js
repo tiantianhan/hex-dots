@@ -7,14 +7,16 @@ class GameConstants {
 
     static BACKGROUND = {
         color: 0xeeeeee,
-        colorDark: 0xdddddd,
     };
 
     static TEXT = {
         color: "#111111",
+        colorClick: "#b7330b",
         colorHover: "#f46d43",
         colorHighlight: "#f46d43",
         colorDisable: "#cccccc",
+        fontFamily: "Montserrat, Courier, serif",
+        fontSize: 18,
     };
 
     static MARGINS = {
@@ -24,6 +26,9 @@ class GameConstants {
 
     static TOP_BAR = {
         height: 50,
+        color: 0xdddddd,
+        smallFontSize: 16,
+        largeFontSize: 20,
     };
 
     static GRID = {
@@ -43,6 +48,7 @@ class GameConstants {
         numColorsMin: 1,
         numColorsMax: 8,
         size: 25,
+        // Larger scale results in larger particle effect
         particleScale: 5,
         // Must have at least numColorsMax possible colors
         possibleColors: [

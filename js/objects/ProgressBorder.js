@@ -17,6 +17,7 @@ class ProgressBorder extends Phaser.GameObjects.Container {
         this.topBorder;
         this.bottomBorder;
         this.verticalBorders;
+
         this.tintedOverlay = new TintedOverlay(
             this.scene,
             0,
